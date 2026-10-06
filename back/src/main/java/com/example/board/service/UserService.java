@@ -1,5 +1,7 @@
 package com.example.board.service;
 
+import com.example.board.exception.BusinessException;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,18 +30,27 @@ public class UserService {
     public Long signup(SignupRequest request) {
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("이미 사용 중인 username입니다.");
+        	throw new BusinessException(
+                    "USERNAME_ALREADY_EXISTS",
+                    "이미 사용 중인 username입니다."
+            );
         }
 
         if (userRepository.existsByNickname(request.getNickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 nickname입니다.");
+        	throw new BusinessException(
+                    "NICKNAME_ALREADY_EXISTS",
+                    "이미 사용 중인 nickname입니다."
+            );
         }
 
         if (request.getEmail() != null
                 && !request.getEmail().isBlank()
                 && userRepository.existsByEmail(request.getEmail())) {
 
-            throw new IllegalArgumentException("이미 사용 중인 email입니다.");
+        	throw new BusinessException(
+                    "EMAIL_ALREADY_EXISTS",
+                    "이미 사용 중인 email입니다."
+            );
         }
 
         User user = new User();
