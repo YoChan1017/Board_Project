@@ -1,15 +1,17 @@
 package com.example.board.controller;
 
-import com.example.board.dto.auth.SignupRequest;
-import com.example.board.service.UserService;
-
-import jakarta.validation.Valid;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import com.example.board.dto.auth.LoginRequest;
+import com.example.board.dto.auth.LoginResponse;
+import com.example.board.dto.auth.SignupRequest;
+import com.example.board.service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,5 +32,14 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of("userId", userId));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request) {
+
+        LoginResponse response = userService.login(request);
+
+        return ResponseEntity.ok(response);
     }
 }

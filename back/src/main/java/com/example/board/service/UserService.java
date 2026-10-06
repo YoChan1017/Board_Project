@@ -1,6 +1,9 @@
 package com.example.board.service;
 
 import com.example.board.exception.BusinessException;
+import com.example.board.dto.auth.LoginRequest;
+import com.example.board.dto.auth.LoginResponse;
+import com.example.board.enums.Role;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -64,5 +67,39 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         return savedUser.getId();
+    }
+    
+    @Transactional(readOnly = true)
+    public LoginResponse login(LoginRequest request) {
+
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new BusinessException(
+                        "INVALID_CREDENTIALS",
+                        "username 또는 password가 올바르지 않습니다."
+                ));
+
+        if (!passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword())) {
+
+            throw new BusinessException(
+                    "INVALID_CREDENTIALS",
+                    "username 또는 password가 올바르지 않습니다."
+            );
+        }
+
+        if (user.getDeletedAt() != null) {
+            throw new BusinessException(
+                    "INVALID_CREDENTIALS",
+                    "username 또는 password가 올바르지 않습니다."
+            );
+        }
+
+        return new LoginResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getNickname(),
+                user.getRole()
+        );
     }
 }
