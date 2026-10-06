@@ -48,6 +48,11 @@ public class SecurityConfig {
                     HttpMethod.POST,
                     "/api/boards"
                 ).hasRole("ADMIN")
+                
+                .requestMatchers(
+                	HttpMethod.PUT,
+                    "/api/boards/**"
+                ).hasRole("ADMIN")
 
                 .anyRequest().authenticated()
             )

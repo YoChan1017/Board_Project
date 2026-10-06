@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import com.example.board.dto.board.BoardResponse;
 import com.example.board.service.BoardService;
 import com.example.board.dto.board.BoardCreateRequest;
+import com.example.board.dto.board.BoardUpdateRequest;
 
 import jakarta.validation.Valid;
 
@@ -24,6 +25,7 @@ public class BoardController {
 
     @GetMapping
     public ResponseEntity<List<BoardResponse>> findAll() {
+
         return ResponseEntity.ok(
                 boardService.findAll()
         );
@@ -42,13 +44,22 @@ public class BoardController {
     public ResponseEntity<BoardResponse> create(
             @Valid @RequestBody BoardCreateRequest request) {
 
-        System.out.println("===== BOARD CREATE CONTROLLER =====");
-        System.out.println("게시판 생성 요청 도착");
-
-        BoardResponse response = boardService.create(request);
+        BoardResponse response =
+                boardService.create(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @PutMapping("/{boardId}")
+    public ResponseEntity<BoardResponse> update(
+            @PathVariable Long boardId,
+            @Valid @RequestBody BoardUpdateRequest request) {
+
+        BoardResponse response =
+                boardService.update(boardId, request);
+
+        return ResponseEntity.ok(response);
     }
 }

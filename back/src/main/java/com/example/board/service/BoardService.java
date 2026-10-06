@@ -11,6 +11,7 @@ import com.example.board.exception.ResourceNotFoundException;
 import com.example.board.repository.BoardRepository;
 import com.example.board.dto.board.BoardCreateRequest;
 import com.example.board.exception.BusinessException;
+import com.example.board.dto.board.BoardUpdateRequest;
 
 @Service
 @Transactional(readOnly = true)
@@ -48,6 +49,33 @@ public class BoardService {
         Board savedBoard = boardRepository.save(board);
 
         return BoardResponse.from(savedBoard);
+    }
+    
+    @Transactional
+    public BoardResponse update(
+            Long boardId,
+            BoardUpdateRequest request) {
+
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "게시판을 찾을 수 없습니다."
+                        )
+                );
+
+        if (!board.getName().equals(request.getName())
+                && boardRepository.existsByName(request.getName())) {
+
+            throw new BusinessException(
+                    "BOARD_NAME_ALREADY_EXISTS",
+                    "이미 사용 중인 게시판 이름입니다."
+            );
+        }
+
+        board.setName(request.getName());
+        board.setDescription(request.getDescription());
+
+        return BoardResponse.from(board);
     }
 
     public BoardResponse findById(Long boardId) {
