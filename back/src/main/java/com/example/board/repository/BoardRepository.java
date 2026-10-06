@@ -6,4 +6,5 @@ import com.example.board.entity.Board;
 
 public interface BoardRepository extends JpaRepository<Board, Long> {
 
+    boolean existsByName(String name);
 }

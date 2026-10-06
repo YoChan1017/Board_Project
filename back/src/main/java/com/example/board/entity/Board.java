@@ -21,7 +21,13 @@ public class Board extends BaseEntity {
     @Column(name = "description", length = 255)
     private String description;
 
+    /*
     protected Board() {
+    }
+    */
+    
+    public Board() {
+    	
     }
 
     public Long getId() {

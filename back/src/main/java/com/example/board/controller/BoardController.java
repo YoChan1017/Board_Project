@@ -4,9 +4,13 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 import com.example.board.dto.board.BoardResponse;
 import com.example.board.service.BoardService;
+import com.example.board.dto.board.BoardCreateRequest;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/boards")
@@ -20,7 +24,6 @@ public class BoardController {
 
     @GetMapping
     public ResponseEntity<List<BoardResponse>> findAll() {
-
         return ResponseEntity.ok(
                 boardService.findAll()
         );
@@ -33,5 +36,16 @@ public class BoardController {
         return ResponseEntity.ok(
                 boardService.findById(boardId)
         );
+    }
+
+    @PostMapping
+    public ResponseEntity<BoardResponse> create(
+            @Valid @RequestBody BoardCreateRequest request) {
+
+        BoardResponse response = boardService.create(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 }

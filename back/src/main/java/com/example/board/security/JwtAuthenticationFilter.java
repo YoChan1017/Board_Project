@@ -69,6 +69,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
+            
+            System.out.println("===== JWT 인증 실패 =====");
+            System.out.println("예외: " + e.getClass().getName());
+            System.out.println("메시지: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);
