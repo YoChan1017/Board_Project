@@ -10,7 +10,10 @@ import com.example.board.dto.auth.SignupRequest;
 import com.example.board.entity.User;
 import com.example.board.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
+
 @SpringBootTest
+@Transactional
 class UserServiceTest {
 
     @Autowired
