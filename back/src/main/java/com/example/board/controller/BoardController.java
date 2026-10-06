@@ -42,6 +42,9 @@ public class BoardController {
     public ResponseEntity<BoardResponse> create(
             @Valid @RequestBody BoardCreateRequest request) {
 
+        System.out.println("===== BOARD CREATE CONTROLLER =====");
+        System.out.println("게시판 생성 요청 도착");
+
         BoardResponse response = boardService.create(request);
 
         return ResponseEntity

@@ -34,11 +34,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
+        System.out.println();
+        System.out.println("===== JWT FILTER START =====");
+        System.out.println("Method: " + request.getMethod());
+        System.out.println("URI: " + request.getRequestURI());
+
         String authorizationHeader =
                 request.getHeader("Authorization");
 
+        System.out.println(
+                "Authorization 존재: "
+                + (authorizationHeader != null)
+        );
+
         if (authorizationHeader == null
                 || !authorizationHeader.startsWith("Bearer ")) {
+
+            System.out.println("→ JWT 없음");
 
             filterChain.doFilter(request, response);
             return;
@@ -50,11 +62,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username =
                     jwtTokenProvider.getUsername(token);
 
+            System.out.println(
+                    "→ JWT username: " + username
+            );
+
             if (SecurityContextHolder.getContext()
                     .getAuthentication() == null) {
 
                 UserDetails userDetails =
                         userDetailsService.loadUserByUsername(username);
+
+                System.out.println(
+                        "→ DB 사용자 조회 완료: "
+                        + userDetails.getUsername()
+                );
+
+                System.out.println(
+                        "→ 권한: "
+                        + userDetails.getAuthorities()
+                );
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -65,15 +91,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
+
+                System.out.println(
+                        "→ SecurityContext 인증 등록 완료"
+                );
+
+                System.out.println(
+                        "→ 현재 인증 객체: "
+                        + SecurityContextHolder.getContext()
+                                .getAuthentication()
+                );
             }
 
         } catch (Exception e) {
+
             SecurityContextHolder.clearContext();
-            
+
+            System.out.println();
             System.out.println("===== JWT 인증 실패 =====");
-            System.out.println("예외: " + e.getClass().getName());
-            System.out.println("메시지: " + e.getMessage());
+            System.out.println(
+                    "예외: " + e.getClass().getName()
+            );
+            System.out.println(
+                    "메시지: " + e.getMessage()
+            );
         }
+
+        System.out.println("===== JWT FILTER END =====");
+        System.out.println();
 
         filterChain.doFilter(request, response);
     }
