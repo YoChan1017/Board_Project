@@ -1,0 +1,57 @@
+package com.example.board.service;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.board.dto.auth.SignupRequest;
+import com.example.board.entity.User;
+import com.example.board.enums.Role;
+import com.example.board.repository.UserRepository;
+
+@Service
+@Transactional(readOnly = true)
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
+
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Transactional
+    public Long signup(SignupRequest request) {
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("이미 사용 중인 username입니다.");
+        }
+
+        if (userRepository.existsByNickname(request.getNickname())) {
+            throw new IllegalArgumentException("이미 사용 중인 nickname입니다.");
+        }
+
+        if (request.getEmail() != null
+                && !request.getEmail().isBlank()
+                && userRepository.existsByEmail(request.getEmail())) {
+
+            throw new IllegalArgumentException("이미 사용 중인 email입니다.");
+        }
+
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setNickname(request.getNickname());
+        user.setEmail(request.getEmail());
+        user.setRole(Role.USER);
+
+        User savedUser = userRepository.save(user);
+
+        return savedUser.getId();
+    }
+}

@@ -40,7 +40,12 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    /*
     protected User() {
+    }
+    */
+    public User() {
+    	
     }
 
     public Long getId() {
