@@ -2,6 +2,7 @@ package com.example.board.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,7 @@ class UserServiceTest {
 
         assertEquals("loginTest", response.getUsername());
         assertEquals("로그인테스트", response.getNickname());
+        assertNotNull(response.getAccessToken());
     }
 
     @Test

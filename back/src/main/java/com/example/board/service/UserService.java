@@ -5,6 +5,7 @@ import com.example.board.dto.auth.LoginRequest;
 import com.example.board.dto.auth.LoginResponse;
 import com.example.board.enums.Role;
 import com.example.board.exception.InvalidCredentialsException;
+import com.example.board.security.JwtTokenProvider;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,16 +20,19 @@ import com.example.board.repository.UserRepository;
 @Transactional(readOnly = true)
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final JwtTokenProvider jwtTokenProvider;
 
-    public UserService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder) {
+	public UserService(
+	        UserRepository userRepository,
+	        PasswordEncoder passwordEncoder,
+	        JwtTokenProvider jwtTokenProvider) {
 
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+	    this.userRepository = userRepository;
+	    this.passwordEncoder = passwordEncoder;
+	    this.jwtTokenProvider = jwtTokenProvider;
+	}
 
     @Transactional
     public Long signup(SignupRequest request) {
@@ -93,7 +97,15 @@ public class UserService {
             );
         }
 
+        String accessToken = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getUsername(),
+                user.getNickname(),
+                user.getRole().name()
+        );
+
         return new LoginResponse(
+                accessToken,
                 user.getId(),
                 user.getUsername(),
                 user.getNickname(),

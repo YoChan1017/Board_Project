@@ -42,4 +42,15 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+    
+    @GetMapping("/me") // 임시
+    public ResponseEntity<Map<String, Object>> me(
+            org.springframework.security.core.Authentication authentication) {
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "username", authentication.getName()
+                )
+        );
+    }
 }
