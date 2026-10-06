@@ -1,48 +1,107 @@
 package com.example.board.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.example.board.dto.auth.LoginRequest;
+import com.example.board.dto.auth.LoginResponse;
 import com.example.board.dto.auth.SignupRequest;
 import com.example.board.entity.User;
+import com.example.board.exception.InvalidCredentialsException;
 import com.example.board.repository.UserRepository;
-
-import jakarta.transaction.Transactional;
 
 @SpringBootTest
 @Transactional
 class UserServiceTest {
 
     @Autowired
-    private UserService userService;
+    UserService userService;
 
     @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
-    @Test
-    void signupTest() {
+    @BeforeEach
+    void setUp() {
 
         SignupRequest request = new SignupRequest();
 
-        request.setUsername("service01");
+        request.setUsername("loginTest");
         request.setPassword("password123");
-        request.setNickname("서비스테스트");
-        request.setEmail("service01@test.com");
+        request.setNickname("로그인테스트");
+        request.setEmail("login@test.com");
 
-        Long userId = userService.signup(request);
+        userService.signup(request);
+    }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow();
+    @Test
+    void loginSuccessTest() {
 
-        System.out.println("생성된 회원 ID: " + user.getId());
-        System.out.println("username: " + user.getUsername());
-        System.out.println("nickname: " + user.getNickname());
-        System.out.println("role: " + user.getRole());
-        System.out.println("createdAt: " + user.getCreatedAt());
+        LoginRequest request = new LoginRequest();
 
-        assertEquals("service01", user.getUsername());
+        request.setUsername("loginTest");
+        request.setPassword("password123");
+
+        LoginResponse response = userService.login(request);
+
+        System.out.println("로그인 성공");
+        System.out.println("userId: " + response.getUserId());
+        System.out.println("username: " + response.getUsername());
+        System.out.println("nickname: " + response.getNickname());
+        System.out.println("role: " + response.getRole());
+
+        assertEquals("loginTest", response.getUsername());
+        assertEquals("로그인테스트", response.getNickname());
+    }
+
+    @Test
+    void loginWrongPasswordTest() {
+
+        LoginRequest request = new LoginRequest();
+
+        request.setUsername("loginTest");
+        request.setPassword("wrongPassword");
+
+        InvalidCredentialsException exception =
+                assertThrows(
+                        InvalidCredentialsException.class,
+                        () -> userService.login(request)
+                );
+
+        System.out.println("잘못된 비밀번호 테스트");
+        System.out.println("message: " + exception.getMessage());
+
+        assertEquals(
+                "username 또는 password가 올바르지 않습니다.",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void loginUserNotFoundTest() {
+
+        LoginRequest request = new LoginRequest();
+
+        request.setUsername("notExistUser");
+        request.setPassword("password123");
+
+        InvalidCredentialsException exception =
+                assertThrows(
+                        InvalidCredentialsException.class,
+                        () -> userService.login(request)
+                );
+
+        System.out.println("존재하지 않는 사용자 테스트");
+        System.out.println("message: " + exception.getMessage());
+
+        assertEquals(
+                "username 또는 password가 올바르지 않습니다.",
+                exception.getMessage()
+        );
     }
 }
