@@ -53,6 +53,11 @@ public class SecurityConfig {
                 	HttpMethod.PUT,
                     "/api/boards/**"
                 ).hasRole("ADMIN")
+                
+                .requestMatchers(
+                	HttpMethod.DELETE,
+                	"/api/boards/**"
+                ).hasRole("ADMIN")
 
                 .anyRequest().authenticated()
             )

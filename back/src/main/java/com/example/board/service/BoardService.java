@@ -12,15 +12,25 @@ import com.example.board.repository.BoardRepository;
 import com.example.board.dto.board.BoardCreateRequest;
 import com.example.board.exception.BusinessException;
 import com.example.board.dto.board.BoardUpdateRequest;
+import com.example.board.repository.CategoryRepository;
+import com.example.board.repository.PostRepository;
 
 @Service
 @Transactional(readOnly = true)
 public class BoardService {
 
-    private final BoardRepository boardRepository;
+	private final BoardRepository boardRepository;
+	private final CategoryRepository categoryRepository;
+	private final PostRepository postRepository;
 
-    public BoardService(BoardRepository boardRepository) {
+    public BoardService(
+            BoardRepository boardRepository,
+            CategoryRepository categoryRepository,
+            PostRepository postRepository) {
+
         this.boardRepository = boardRepository;
+        this.categoryRepository = categoryRepository;
+        this.postRepository = postRepository;
     }
 
     public List<BoardResponse> findAll() {
@@ -76,6 +86,33 @@ public class BoardService {
         board.setDescription(request.getDescription());
 
         return BoardResponse.from(board);
+    }
+    
+    @Transactional
+    public void delete(Long boardId) {
+
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "게시판을 찾을 수 없습니다."
+                        )
+                );
+
+        if (categoryRepository.existsByBoardId(boardId)) {
+            throw new BusinessException(
+                    "BOARD_HAS_CATEGORIES",
+                    "카테고리가 존재하는 게시판은 삭제할 수 없습니다."
+            );
+        }
+
+        if (postRepository.existsByBoardId(boardId)) {
+            throw new BusinessException(
+                    "BOARD_HAS_POSTS",
+                    "게시글이 존재하는 게시판은 삭제할 수 없습니다."
+            );
+        }
+
+        boardRepository.delete(board);
     }
 
     public BoardResponse findById(Long boardId) {

@@ -6,4 +6,5 @@ import com.example.board.entity.Category;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
+    boolean existsByBoardId(Long boardId);
 }
