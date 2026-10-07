@@ -25,7 +25,13 @@ public class Category extends BaseEntity {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    /*
     protected Category() {
+    }
+    */
+    
+    public Category() {
+    	
     }
 
     public Long getId() {
