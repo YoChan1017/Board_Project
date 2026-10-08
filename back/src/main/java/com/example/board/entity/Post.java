@@ -49,7 +49,13 @@ public class Post extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    /*
     protected Post() {
+    }
+    */
+    
+    public Post() {
+    	
     }
 
     public Long getId() {
