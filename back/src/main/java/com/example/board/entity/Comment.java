@@ -38,7 +38,13 @@ public class Comment extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    /*
     protected Comment() {
+    }
+    */
+    
+    public Comment() {
+    	
     }
 
     public Long getId() {
