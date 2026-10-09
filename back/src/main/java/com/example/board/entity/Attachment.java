@@ -8,7 +8,15 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "attachments")
+@Table(
+	    name = "attachments",
+	    indexes = {
+	        @Index(
+	            name = "idx_attachments_post",
+	            columnList = "post_id"
+	        )
+	    }
+	)
 @EntityListeners(AuditingEntityListener.class)
 public class Attachment {
 
@@ -39,7 +47,13 @@ public class Attachment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /*
     protected Attachment() {
+    }
+    */
+    
+    public Attachment() {
+    	
     }
 
     public Long getId() {
