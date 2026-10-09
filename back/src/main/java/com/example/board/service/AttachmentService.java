@@ -70,6 +70,18 @@ public class AttachmentService {
 
         Post post = findActivePost(postId);
         checkPostAccess(post, username, admin);
+        
+        System.out.println("===== ATTACHMENT UPLOAD DEBUG =====");
+        System.out.println("파일명: "
+                + (file != null ? file.getOriginalFilename() : "null"));
+        System.out.println("파일 크기: "
+                + (file != null ? file.getSize() : "null"));
+        System.out.println("빈 파일 여부: "
+                + (file != null ? file.isEmpty() : "null"));
+        System.out.println("Content-Type: "
+                + (file != null ? file.getContentType() : "null"));
+        System.out.println("===================================");
+        
         validateFile(file);
 
         String originalName = sanitizeOriginalFilename(
