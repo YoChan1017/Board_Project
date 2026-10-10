@@ -1,20 +1,44 @@
+
 package com.example.board.repository;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.board.entity.Post;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    // 특정 게시판에 게시글이 존재하는지 확인
+    // Check whether a post exists in a board
     boolean existsByBoardId(Long boardId);
 
-    // 특정 게시판의 삭제되지 않은 게시글 목록
-    List<Post> findByBoardIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long boardId);
+    // Find active posts with pagination
+    Page<Post> findByBoardIdAndDeletedAtIsNull(
+            Long boardId,
+            Pageable pageable
+    );
 
-    // 삭제되지 않은 게시글 상세 조회
+    // Search active posts by title or content
+    @Query("""
+            SELECT p
+            FROM Post p
+            WHERE p.board.id = :boardId
+              AND p.deletedAt IS NULL
+              AND (
+                  LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+            """)
+    Page<Post> searchActivePostsByBoardIdAndKeyword(
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    // Find an active post by ID
     Optional<Post> findByIdAndDeletedAtIsNull(Long postId);
 }

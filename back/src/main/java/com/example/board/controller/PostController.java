@@ -1,7 +1,7 @@
 package com.example.board.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,14 +32,22 @@ public class PostController {
     }
 
     /**
-     * 특정 게시판의 게시글 목록 조회
+     * 특정 게시판의 게시글 목록 조회 및 검색
      */
     @GetMapping("/boards/{boardId}/posts")
-    public ResponseEntity<List<PostListResponse>> findByBoardId(
-            @PathVariable Long boardId) {
+    public ResponseEntity<Page<PostListResponse>> findByBoardId(
+            @PathVariable Long boardId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword) {
 
         return ResponseEntity.ok(
-                postService.findByBoardId(boardId)
+                postService.findByBoardId(
+                        boardId,
+                        page,
+                        size,
+                        keyword
+                )
         );
     }
 

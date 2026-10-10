@@ -5,6 +5,12 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.board.dto.post.PostCreateRequest;
 import com.example.board.dto.post.PostListResponse;
@@ -45,7 +51,21 @@ public class PostService {
     /**
      * 특정 게시판의 게시글 목록 조회
      */
+    /**
+     * 기존 컨트롤러와의 호환을 위한 첫 페이지 조회
+     */
     public List<PostListResponse> findByBoardId(Long boardId) {
+        return findByBoardId(boardId, 0, 10, null).getContent();
+    }
+    
+    /**
+     * 특정 게시판의 게시글 페이지 조회 및 검색
+     */
+    public Page<PostListResponse> findByBoardId(
+            Long boardId,
+            int page,
+            int size,
+            String keyword) {
 
         if (!boardRepository.existsById(boardId)) {
             throw new ResourceNotFoundException(
@@ -53,11 +73,48 @@ public class PostService {
             );
         }
 
-        return postRepository
-                .findByBoardIdAndDeletedAtIsNullOrderByCreatedAtDesc(boardId)
-                .stream()
-                .map(PostListResponse::from)
-                .toList();
+        if (page < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "페이지 번호는 0 이상이어야 합니다."
+            );
+        }
+
+        if (size < 1 || size > 100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "페이지 크기는 1~100 사이여야 합니다."
+            );
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+                        .and(Sort.by(Sort.Direction.DESC, "id"))
+        );
+
+        String normalizedKeyword =
+                keyword == null ? "" : keyword.trim();
+
+        Page<Post> posts;
+
+        if (normalizedKeyword.isEmpty()) {
+            posts = postRepository
+                    .findByBoardIdAndDeletedAtIsNull(
+                            boardId,
+                            pageable
+                    );
+        } else {
+            posts = postRepository
+                    .searchActivePostsByBoardIdAndKeyword(
+                            boardId,
+                            normalizedKeyword,
+                            pageable
+                    );
+        }
+
+        return posts.map(PostListResponse::from);
     }
 
     /**
