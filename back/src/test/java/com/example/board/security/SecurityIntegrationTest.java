@@ -38,6 +38,7 @@ class SecurityIntegrationTest {
 
     private Long boardId;
     private String userToken;
+    private String adminToken;
 
     @BeforeEach
     void createTestUserAndBoard() {
@@ -86,6 +87,34 @@ class SecurityIntegrationTest {
                 username,
                 nickname,
                 "USER"
+        );
+        
+     // 테스트용 관리자 계정 생성
+        String adminUsername = "security-admin-" + suffix;
+        String adminNickname = "security-admin-" + suffix;
+
+        jdbcTemplate.update(
+                "INSERT INTO users "
+                + "(username, password, nickname, role) "
+                + "VALUES (?, ?, ?, ?)",
+                adminUsername,
+                "test-password",
+                adminNickname,
+                "ADMIN"
+        );
+
+        Long adminUserId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE username = ?",
+                Long.class,
+                adminUsername
+        );
+
+        // 테스트용 관리자 JWT 생성
+        adminToken = jwtTokenProvider.generateToken(
+                adminUserId,
+                adminUsername,
+                adminNickname,
+                "ADMIN"
         );
     }
 
@@ -165,5 +194,35 @@ class SecurityIntegrationTest {
                         )
                 )
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+    
+    @Test
+    void 관리자_JWT로_게시판을_생성하면_201을_반환한다()
+            throws Exception {
+
+        String newBoardName = "admin-created-"
+                + UUID.randomUUID().toString().replace("-", "");
+
+        mockMvc.perform(
+                post("/api/boards")
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                "Bearer " + adminToken
+                        )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                "{\"name\":\"" + newBoardName
+                                + "\",\"description\":\"관리자 생성 테스트\"}"
+                        )
+        )
+                .andExpect(status().isCreated())
+                .andExpect(
+                        content().contentTypeCompatibleWith(
+                                MediaType.APPLICATION_JSON
+                        )
+                )
+                .andExpect(
+                        jsonPath("$.name").value(newBoardName)
+                );
     }
 }
