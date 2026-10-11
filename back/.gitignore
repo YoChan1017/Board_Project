@@ -31,5 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-back\src\test\resources\application-test.properties
