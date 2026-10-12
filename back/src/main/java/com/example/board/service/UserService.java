@@ -50,12 +50,17 @@ public class UserService {
                     "이미 사용 중인 nickname입니다."
             );
         }
+        
+        String email = request.getEmail();
+        if (email != null) {
+            email = email.trim();
+            if (email.isEmpty()) {
+                email = null;
+            }
+        }
 
-        if (request.getEmail() != null
-                && !request.getEmail().isBlank()
-                && userRepository.existsByEmail(request.getEmail())) {
-
-        	throw new BusinessException(
+        if (email != null && userRepository.existsByEmail(email)) {
+            throw new BusinessException(
                     "EMAIL_ALREADY_EXISTS",
                     "이미 사용 중인 email입니다."
             );
@@ -66,7 +71,7 @@ public class UserService {
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setNickname(request.getNickname());
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setRole(Role.USER);
 
         User savedUser = userRepository.save(user);

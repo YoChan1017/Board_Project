@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -199,5 +201,25 @@ public class GlobalExceptionHandler {
             case PAYLOAD_TOO_LARGE -> "FILE_TOO_LARGE";
             default -> "REQUEST_FAILED";
         };
+    }
+    
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(
+            MissingServletRequestParameterException e) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "INVALID_PARAMETER",
+                "필수 요청 파라미터가 없습니다."
+        );
+    }
+    
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestPart(
+            MissingServletRequestPartException e) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST_PART",
+                "필수 요청 파일이 없습니다."
+        );
     }
 }

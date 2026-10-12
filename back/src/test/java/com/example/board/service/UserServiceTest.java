@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.ActiveProfiles;
 
 import com.example.board.dto.auth.LoginRequest;
 import com.example.board.dto.auth.LoginResponse;
@@ -18,6 +19,7 @@ import com.example.board.exception.InvalidCredentialsException;
 import com.example.board.repository.UserRepository;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class UserServiceTest {
 
