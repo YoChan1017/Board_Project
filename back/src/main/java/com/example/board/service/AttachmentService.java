@@ -71,6 +71,8 @@ public class AttachmentService {
         Post post = findActivePost(postId);
         checkPostAccess(post, username, admin);
         
+        // 임시 업로드 디버그 출력
+        /*
         System.out.println("===== ATTACHMENT UPLOAD DEBUG =====");
         System.out.println("파일명: "
                 + (file != null ? file.getOriginalFilename() : "null"));
@@ -81,6 +83,7 @@ public class AttachmentService {
         System.out.println("Content-Type: "
                 + (file != null ? file.getContentType() : "null"));
         System.out.println("===================================");
+        */
         
         validateFile(file);
 
