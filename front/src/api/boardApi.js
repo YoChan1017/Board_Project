@@ -17,4 +17,14 @@ export const boardApi = {
     })
     return response.data
   },
+
+  async getPost(postId) {
+    const response = await apiClient.get(`/posts/${postId}`)
+    return response.data
+  },
+
+  async createPost(boardId, payload) {
+    const response = await apiClient.post(`/boards/${boardId}/posts`, payload)
+    return response.data
+  },
 }

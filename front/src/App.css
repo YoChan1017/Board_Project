@@ -253,3 +253,42 @@
   .post-search input { flex-basis: 100%; }
   .boards-alert { align-items: flex-start; flex-direction: column; }
 }
+
+/* Frontend milestone 3: append this file to front/src/App.css */
+.post-list-heading-actions { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.post-title-link { color: var(--ink, #25243a); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+.post-title-link:hover { color: var(--purple, #6655df); text-decoration: underline; text-underline-offset: 3px; }
+.post-page { width: min(900px, calc(100% - 40px)); margin: 44px auto 80px; }
+.post-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; color: #8c899f; font-size: 12px; }
+.post-breadcrumb a { color: var(--purple, #6655df); text-decoration: none; font-weight: 700; }
+.post-detail-card, .post-form-card, .post-error { overflow: hidden; border: 1px solid #e9e7f3; border-radius: 22px; background: #fff; box-shadow: 0 16px 44px rgba(42, 35, 90, .06); }
+.post-detail-header { padding: 34px 38px 25px; border-bottom: 1px solid #eeedf5; }
+.post-detail-labels { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.post-detail-header h1 { margin: 18px 0 16px; color: var(--ink, #25243a); font-size: clamp(24px, 4vw, 34px); line-height: 1.35; letter-spacing: -1px; overflow-wrap: anywhere; }
+.post-detail-meta, .post-detail-stats { display: flex; flex-wrap: wrap; gap: 12px 20px; color: #858298; font-size: 12px; }
+.post-detail-meta strong { color: #39364f; }
+.post-detail-stats { margin-top: 18px; }
+.post-detail-content { min-height: 220px; padding: 34px 38px 46px; color: #403e53; font-size: 15px; line-height: 1.95; white-space: pre-wrap; overflow-wrap: anywhere; }
+.post-detail-actions, .post-form-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 22px; }
+.post-form-card { padding: 34px 38px 38px; }
+.post-form-heading h1 { margin: 13px 0 8px; color: var(--ink, #25243a); font-size: 30px; letter-spacing: -1px; }
+.post-form-heading p { margin: 0 0 26px; color: #858298; font-size: 13px; }
+.post-create-form { display: flex; flex-direction: column; gap: 10px; }
+.post-create-form label { margin-top: 10px; color: #37354c; font-size: 13px; font-weight: 750; }
+.post-create-form input, .post-create-form textarea, .post-create-form select { width: 100%; border: 1px solid #e5e2f0; border-radius: 12px; padding: 13px 14px; background: #fcfbff; color: #28263d; font: inherit; font-size: 14px; outline: none; transition: border-color .18s, box-shadow .18s; }
+.post-create-form input:focus, .post-create-form textarea:focus, .post-create-form select:focus { border-color: #9185ed; box-shadow: 0 0 0 3px rgba(111, 95, 224, .12); }
+.post-create-form textarea { resize: vertical; min-height: 240px; line-height: 1.75; }
+.form-required { margin-left: 5px; color: #cf5b73; font-size: 10px; }
+.form-optional { margin-left: 5px; color: #9995aa; font-size: 10px; font-weight: 500; }
+.post-input-hint { align-self: flex-end; margin-top: -4px; color: #9692a8; font-size: 11px; }
+.post-form-actions { justify-content: flex-end; margin-top: 18px; }
+.post-error { padding: 42px 36px; text-align: center; }
+.post-error h1 { margin: 15px 0 10px; font-size: 24px; }
+.post-error p { margin: 0 0 24px; color: #858298; font-size: 13px; }
+@media (max-width: 640px) {
+  .post-page { width: min(100% - 28px, 900px); margin-top: 28px; }
+  .post-detail-header, .post-detail-content, .post-form-card { padding: 24px 20px; }
+  .post-list-heading-actions { align-items: flex-end; flex-direction: column; gap: 8px; }
+  .post-detail-actions { align-items: stretch; }
+  .post-detail-actions .button { justify-content: center; }
+}

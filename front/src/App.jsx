@@ -6,6 +6,8 @@ import BoardsPage from './pages/BoardsPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import PostCreatePage from './pages/PostCreatePage'
+import PostDetailPage from './pages/PostDetailPage'
 import SignupPage from './pages/SignupPage'
 import './App.css'
 
@@ -30,17 +32,16 @@ export default function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<RootRedirect />} />
-
         <Route element={<GuestRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
         </Route>
-
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/boards" element={<BoardsPage />} />
+          <Route path="/boards/:boardId/posts/new" element={<PostCreatePage />} />
+          <Route path="/posts/:postId" element={<PostDetailPage />} />
         </Route>
-
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
