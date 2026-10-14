@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import AttachmentsSection from '../components/AttachmentsSection'
 import CommentsSection from '../components/CommentsSection'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
@@ -138,6 +139,8 @@ export default function PostDetailPage() {
         </header>
         <div className="post-detail-content">{post.content}</div>
       </article>
+
+      <AttachmentsSection postId={postId} canManage={canManagePost} />
 
       <div className="post-detail-toolbar">
         <button

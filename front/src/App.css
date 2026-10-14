@@ -347,3 +347,36 @@
   .comment-item { margin-left: 0 !important; }
   .comment-children { padding-left: 9px; }
 }
+
+/* Append this file's contents to the end of front/src/App.css. */
+.attachments-panel { margin-top: 20px; padding: 25px 28px 27px; border: 1px solid #e9e7f3; border-radius: 20px; background: #fff; box-shadow: 0 14px 38px rgba(42, 35, 90, .035); }
+.attachments-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+.attachments-heading-row h2 { margin: 7px 0 0; color: var(--ink, #25243a); font-size: 21px; letter-spacing: -.5px; }
+.attachments-heading-row h2 span { margin-left: 5px; color: var(--purple, #6655df); font-size: 14px; }
+.attachments-limit { color: #8e8aa3; font-size: 11px; white-space: nowrap; }
+.attachment-upload-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 15px; padding: 14px; border: 1px dashed #dcd8ef; border-radius: 13px; background: #fcfbff; }
+.attachment-file-label { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 0 11px; border: 1px solid #dedaf1; border-radius: 9px; color: #5145a8; background: #fff; font-size: 12px; font-weight: 750; cursor: pointer; }
+.attachment-file-label > span { font-size: 17px; line-height: 1; }
+.attachment-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+.attachment-file-input:focus-visible + .attachment-selected-files { outline: 2px solid #8f82e9; outline-offset: 3px; }
+.attachment-selected-files { flex: 1 1 180px; min-width: 0; color: #817d96; font-size: 11px; overflow-wrap: anywhere; }
+.attachment-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.attachment-item { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px 13px; border: 1px solid #efedf6; border-radius: 12px; }
+.attachment-file-icon { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 11px; color: #6554d7; background: #f1efff; font-size: 21px; font-weight: 700; }
+.attachment-file-info { display: flex; flex: 1 1 auto; flex-direction: column; gap: 5px; min-width: 0; }
+.attachment-file-info strong { overflow: hidden; color: #36344b; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-file-info > span { color: #9692a8; font-size: 10px; }
+.attachment-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.attachment-state, .attachment-empty { display: flex; align-items: center; justify-content: center; min-height: 72px; color: #8c88a0; font-size: 12px; text-align: center; }
+.attachment-alert { margin-bottom: 12px; white-space: pre-line; }
+.attachment-notice { margin: 0 0 12px; color: #3b7c58; font-size: 12px; }
+
+@media (max-width: 640px) {
+  .attachments-panel { padding: 21px 16px; border-radius: 17px; }
+  .attachments-heading-row { align-items: flex-start; }
+  .attachment-item { align-items: flex-start; flex-wrap: wrap; }
+  .attachment-file-info { flex-basis: calc(100% - 52px); }
+  .attachment-actions { width: 100%; justify-content: flex-end; }
+  .attachment-upload-form { align-items: stretch; }
+  .attachment-selected-files { flex-basis: calc(100% - 120px); align-self: center; }
+}

@@ -70,4 +70,28 @@ export const boardApi = {
     const response = await apiClient.delete(`/posts/${postId}/likes`)
     return response.data
   },
+
+  async getAttachments(postId) {
+    const response = await apiClient.get(`/posts/${postId}/attachments`)
+    return response.data
+  },
+
+  async uploadAttachment(postId, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    // Let the browser/Axios set the multipart boundary automatically.
+    const response = await apiClient.post(`/posts/${postId}/attachments`, formData)
+    return response.data
+  },
+
+  async downloadAttachment(attachmentId) {
+    const response = await apiClient.get(`/attachments/${attachmentId}/download`, {
+      responseType: 'blob',
+    })
+    return response.data
+  },
+
+  async deleteAttachment(attachmentId) {
+    await apiClient.delete(`/attachments/${attachmentId}`)
+  },
 }
