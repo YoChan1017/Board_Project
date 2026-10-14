@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import PostCreatePage from './pages/PostCreatePage'
 import PostDetailPage from './pages/PostDetailPage'
+import PostEditPage from './pages/PostEditPage'
 import SignupPage from './pages/SignupPage'
 import './App.css'
 
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/boards" element={<BoardsPage />} />
           <Route path="/boards/:boardId/posts/new" element={<PostCreatePage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
+          <Route path="/posts/:postId/edit" element={<PostEditPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
