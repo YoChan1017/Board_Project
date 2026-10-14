@@ -19,24 +19,17 @@ export default function AppLayout() {
         </Link>
 
         <nav className="site-nav" aria-label="주요 메뉴">
-          <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            홈
-          </NavLink>
+          <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>홈</NavLink>
           {user ? (
             <>
-              <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                대시보드
-              </NavLink>
+              <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>대시보드</NavLink>
+              <NavLink to="/boards" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>게시판</NavLink>
               <span className="nav-user">{user.nickname || user.username}</span>
-              <button type="button" className="button button-quiet button-small" onClick={handleLogout}>
-                로그아웃
-              </button>
+              <button type="button" className="button button-quiet button-small" onClick={handleLogout}>로그아웃</button>
             </>
           ) : (
             <>
-              <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                로그인
-              </NavLink>
+              <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>로그인</NavLink>
               <Link to="/signup" className="button button-primary button-small">회원가입</Link>
             </>
           )}

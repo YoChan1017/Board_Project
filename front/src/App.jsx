@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import AppLayout from './components/AppLayout'
 import { GuestRoute, ProtectedRoute } from './components/RouteGuards'
+import BoardsPage from './pages/BoardsPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -37,6 +38,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/boards" element={<BoardsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
