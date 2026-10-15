@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
+import { ErrorMessage, LoadingState } from '../components/FeedbackState'
 
 function formatDate(value) {
   if (!value) return '-'
@@ -91,9 +92,17 @@ export default function BoardsPage() {
         <p>관심 있는 게시판을 선택하고 최신 글을 확인하세요.</p>
       </section>
 
-      {error && <div className="boards-alert" role="alert"><span>{error}</span><button type="button" className="button button-secondary button-small" onClick={loadBoards}>게시판 다시 불러오기</button></div>}
+      {error && (
+        <ErrorMessage
+          className="boards-alert"
+          actionLabel="게시판 다시 불러오기"
+          onAction={loadBoards}
+        >
+          {error}
+        </ErrorMessage>
+      )}
 
-      {isLoadingBoards ? <div className="boards-state" role="status">게시판 목록을 불러오는 중입니다...</div> : boards.length === 0 ? (
+      {isLoadingBoards ? <LoadingState className="boards-state">게시판 목록을 불러오는 중입니다...</LoadingState> : boards.length === 0 ? (
         <section className="boards-empty"><h2>등록된 게시판이 없습니다.</h2><p>백엔드 데이터베이스에 게시판을 먼저 등록해 주세요.</p></section>
       ) : (
         <>
@@ -120,7 +129,7 @@ export default function BoardsPage() {
               {keyword && <button type="button" className="button button-secondary" onClick={() => { setKeywordInput(''); setKeyword(''); setPage(0) }}>초기화</button>}
             </form>
 
-            {isLoadingPosts ? <div className="boards-state" role="status">게시글을 불러오는 중입니다...</div> : postItems.length === 0 ? (
+            {isLoadingPosts ? <LoadingState className="boards-state">게시글을 불러오는 중입니다...</LoadingState> : postItems.length === 0 ? (
               <div className="posts-empty"><span className="posts-empty-icon">✎</span><h3>{keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.'}</h3><p>{keyword ? '다른 검색어를 입력해 보세요.' : '첫 게시글을 작성해 보세요.'}</p>{!keyword && selectedBoardId && <Link to={`/boards/${selectedBoardId}/posts/new`} className="text-link">첫 글 작성하기 →</Link>}</div>
             ) : (
               <>

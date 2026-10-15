@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
+import { EmptyState, ErrorMessage, LoadingState, SuccessMessage } from '../components/FeedbackState'
 
 const PAGE_SIZE = 10
 
@@ -140,20 +141,15 @@ export default function AdminPostManagementPage() {
       </section>
 
       {error && (
-        <div className="boards-alert admin-post-feedback" role="alert">
-          <span>{error}</span>
-          {selectedBoardId ? (
-            <button type="button" className="button button-secondary button-small" onClick={() => setReloadKey((current) => current + 1)}>
-              게시글 다시 불러오기
-            </button>
-          ) : (
-            <button type="button" className="button button-secondary button-small" onClick={loadBoards}>
-              게시판 다시 불러오기
-            </button>
-          )}
-        </div>
+        <ErrorMessage
+          className="boards-alert admin-post-feedback"
+          actionLabel={selectedBoardId ? '게시글 다시 불러오기' : '게시판 다시 불러오기'}
+          onAction={selectedBoardId ? () => setReloadKey((current) => current + 1) : loadBoards}
+        >
+          {error}
+        </ErrorMessage>
       )}
-      {notice && <p className="admin-post-notice" role="status"><span aria-hidden="true">✓</span>{notice}</p>}
+      {notice && <SuccessMessage className="admin-post-notice" as="p">{notice}</SuccessMessage>}
 
       <section className="admin-post-panel" aria-labelledby="admin-post-list-heading">
         <div className="admin-post-panel-heading">
@@ -168,7 +164,7 @@ export default function AdminPostManagementPage() {
         <div className="admin-post-filters">
           <label htmlFor="admin-post-board">대상 게시판</label>
           {isLoadingBoards ? (
-            <div className="admin-post-inline-state" role="status">게시판 목록을 불러오는 중입니다...</div>
+            <LoadingState className="admin-post-inline-state">게시판 목록을 불러오는 중입니다...</LoadingState>
           ) : boards.length === 0 ? (
             <div className="admin-post-inline-state">등록된 게시판이 없습니다. 먼저 게시판을 추가해 주세요.</div>
           ) : (
@@ -209,15 +205,16 @@ export default function AdminPostManagementPage() {
         </div>
 
         {isLoadingPosts ? (
-          <div className="boards-state" role="status">게시글을 불러오는 중입니다...</div>
+          <LoadingState className="boards-state">게시글을 불러오는 중입니다...</LoadingState>
         ) : !selectedBoardId ? (
-          <div className="admin-post-empty"><strong>게시판을 선택해 주세요.</strong></div>
+          <EmptyState className="admin-post-empty" title="게시판을 선택해 주세요." />
         ) : posts.length === 0 ? (
-          <div className="admin-post-empty">
-            <span aria-hidden="true">▤</span>
-            <strong>{keyword ? '검색 결과가 없습니다.' : '등록된 게시글이 없습니다.'}</strong>
-            <p>{keyword ? '검색어를 변경하거나 초기화해 보세요.' : '선택한 게시판에 게시글이 작성되면 여기에 표시됩니다.'}</p>
-          </div>
+          <EmptyState
+            className="admin-post-empty"
+            icon="▤"
+            title={keyword ? '검색 결과가 없습니다.' : '등록된 게시글이 없습니다.'}
+            description={keyword ? '검색어를 변경하거나 초기화해 보세요.' : '선택한 게시판에 게시글이 작성되면 여기에 표시됩니다.'}
+          />
         ) : (
           <>
             <div className="admin-post-table-wrap">

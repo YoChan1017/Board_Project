@@ -834,3 +834,132 @@ button:disabled,
   .attachment-state[role='status']::before,
   .admin-post-inline-state[role='status']::before { animation: none; transition: none; }
 }
+
+/* Frontend milestone 9: shared status component styling.
+   Append this file to the END of front/src/App.css. */
+.ui-state-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.ui-state-compact {
+  justify-content: flex-start;
+}
+
+.ui-state-spinner {
+  display: inline-block;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  border: 2px solid #e7e3f8;
+  border-top-color: var(--purple, #6757d8);
+  border-radius: 50%;
+  animation: ui-state-spin .75s linear infinite;
+}
+
+.ui-state-message,
+.ui-feedback-message {
+  min-width: 0;
+}
+
+.ui-feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ui-feedback-message {
+  flex: 1 1 auto;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.ui-feedback .button {
+  flex: 0 0 auto;
+}
+
+.ui-success-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ui-success-message > span:last-child {
+  min-width: 0;
+}
+
+.ui-success-icon {
+  flex: 0 0 auto;
+  font-weight: 800;
+}
+
+.ui-empty-state:not(.admin-post-empty):not(.attachment-empty):not(.comments-empty) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.ui-feedback-error:not(.boards-alert) {
+  padding: 11px 13px;
+  color: var(--ui-error-text, #a43c4b);
+  border: 1px solid var(--ui-error-border, #f4d9dd);
+  border-radius: 10px;
+  background: var(--ui-error-bg, #fff5f6);
+}
+
+.ui-success-message:not(.admin-post-notice):not(.attachment-notice) {
+  margin: 0 0 12px;
+  padding: 11px 13px;
+  color: var(--ui-success-text, #237a64);
+  border: 1px solid var(--ui-success-border, #d7f2e8);
+  border-radius: 10px;
+  background: var(--ui-success-bg, #effbf6);
+}
+
+/* The existing administrator notice styles target the icon span directly. */
+.admin-post-notice.ui-success-message > span:last-child {
+  flex: 1 1 auto;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  font-weight: inherit;
+}
+
+.ui-empty-state > strong {
+  display: block;
+}
+
+.ui-empty-state > p {
+  margin: 0;
+}
+
+.ui-empty-icon {
+  display: inline-grid;
+  place-items: center;
+}
+
+@keyframes ui-state-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .ui-feedback {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ui-feedback .button {
+    margin-left: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-state-spinner {
+    animation-duration: 1.8s;
+  }
+}

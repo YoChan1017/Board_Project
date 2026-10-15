@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
+import { EmptyState, ErrorMessage, LoadingState } from './FeedbackState'
 
 function formatCommentDate(value) {
   if (!value) return '-'
@@ -198,7 +199,7 @@ export default function CommentsSection({ postId, user }) {
         <button type="button" className="button button-secondary button-small" onClick={loadComments} disabled={isLoading}>새로고침</button>
       </div>
 
-      {error && <div className="boards-alert comment-alert" role="alert">{error}</div>}
+      {error && <ErrorMessage className="boards-alert comment-alert">{error}</ErrorMessage>}
 
       <form className="comment-create-form" onSubmit={(event) => handleCreate(event)}>
         <label htmlFor={`new-comment-${postId}`}>댓글 작성</label>
@@ -210,8 +211,8 @@ export default function CommentsSection({ postId, user }) {
       </form>
 
       <div className="comment-list" aria-live="polite">
-        {isLoading ? <div className="boards-state">댓글을 불러오는 중입니다...</div> : comments.length === 0 ? (
-          <div className="comments-empty"><span aria-hidden="true">✎</span><p>아직 댓글이 없습니다. 첫 번째 댓글을 남겨 보세요.</p></div>
+        {isLoading ? <LoadingState className="boards-state">댓글을 불러오는 중입니다...</LoadingState> : comments.length === 0 ? (
+          <EmptyState className="comments-empty" icon="✎" description="아직 댓글이 없습니다. 첫 번째 댓글을 남겨 보세요." />
         ) : roots.map((comment) => renderComment(comment))}
       </div>
     </section>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
+import { EmptyState, ErrorMessage, LoadingState, SuccessMessage } from './FeedbackState'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 
@@ -155,8 +156,8 @@ export default function AttachmentsSection({ postId, canManage }) {
         <span className="attachments-limit">파일당 최대 10MB</span>
       </div>
 
-      {error && <div className="boards-alert attachment-alert" role="alert">{error}</div>}
-      {notice && <p className="attachment-notice" role="status">{notice}</p>}
+      {error && <ErrorMessage className="boards-alert attachment-alert">{error}</ErrorMessage>}
+      {notice && <SuccessMessage className="attachment-notice" as="p">{notice}</SuccessMessage>}
 
       {canManage && (
         <form className="attachment-upload-form" onSubmit={handleUpload}>
@@ -183,9 +184,9 @@ export default function AttachmentsSection({ postId, canManage }) {
       )}
 
       {isLoading ? (
-        <div className="attachment-state" role="status">첨부파일 목록을 불러오는 중입니다...</div>
+        <LoadingState className="attachment-state">첨부파일 목록을 불러오는 중입니다...</LoadingState>
       ) : attachments.length === 0 ? (
-        <div className="attachment-empty">등록된 첨부파일이 없습니다.</div>
+        <EmptyState className="attachment-empty" title="등록된 첨부파일이 없습니다." />
       ) : (
         <ul className="attachment-list">
           {attachments.map((attachment) => (
