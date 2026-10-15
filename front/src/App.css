@@ -498,3 +498,339 @@
   .site-header { height: auto; min-height: 70px; flex-wrap: wrap; row-gap: 10px; padding: 12px 0; }
   .site-nav { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 10px; }
 }
+
+/* Frontend milestone 8
+   Append this file to the END of front/src/App.css. */
+
+/* ---------- Shared feedback and status styling ---------- */
+:root {
+  --ui-error-text: #963746;
+  --ui-error-border: #f0cdd2;
+  --ui-error-bg: #fff7f8;
+  --ui-success-text: #246e4b;
+  --ui-success-border: #cce9d8;
+  --ui-success-bg: #f4fbf6;
+  --ui-status-text: #77738e;
+  --ui-status-border: #e8e5f3;
+  --ui-status-bg: #fcfbff;
+}
+
+.boards-alert,
+.error-message,
+.comment-alert,
+.attachment-alert {
+  color: var(--ui-error-text);
+  border: 1px solid var(--ui-error-border);
+  border-radius: 12px;
+  background: var(--ui-error-bg);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.boards-alert > span,
+.admin-post-feedback > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.notice-message,
+.admin-notice,
+.admin-post-notice,
+.attachment-notice {
+  color: var(--ui-success-text);
+  border: 1px solid var(--ui-success-border);
+  border-radius: 12px;
+  background: var(--ui-success-bg);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.boards-state,
+.attachment-state,
+.admin-post-inline-state[role='status'] {
+  color: var(--ui-status-text);
+  border: 1px solid var(--ui-status-border);
+  border-radius: 14px;
+  background: var(--ui-status-bg);
+  line-height: 1.7;
+}
+
+.boards-state[role='status'],
+.attachment-state[role='status'],
+.admin-post-inline-state[role='status'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 104px;
+  padding: 24px;
+}
+
+.boards-state[role='status']::before,
+.attachment-state[role='status']::before,
+.admin-post-inline-state[role='status']::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 2px solid #e3e0f7;
+  border-top-color: var(--purple, #6556d9);
+  border-radius: 50%;
+  animation: board-ui-spin .75s linear infinite;
+}
+
+.boards-empty,
+.posts-empty,
+.admin-post-empty,
+.admin-empty-state,
+.attachment-empty {
+  border-radius: 15px;
+  background: #fcfbff;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.post-error {
+  color: var(--ink, #24213a);
+}
+
+.post-error > p {
+  overflow-wrap: anywhere;
+}
+
+/* Prevent long user-generated text from expanding cards beyond the viewport. */
+.post-detail-card,
+.post-form-card,
+.comments-panel,
+.attachments-panel,
+.admin-panel,
+.admin-post-panel {
+  min-width: 0;
+}
+
+.post-detail-content,
+.comment-content,
+.attachment-file-info,
+.admin-board-copy,
+.admin-post-title-cell {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* More consistent keyboard focus across forms, including native select/textarea. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(101, 86, 217, .32);
+  outline-offset: 3px;
+}
+
+button:disabled,
+.button:disabled {
+  cursor: not-allowed;
+}
+
+/* ---------- Responsive header navigation ---------- */
+.mobile-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e5e1f4;
+  border-radius: 11px;
+  background: #fff;
+  color: var(--ink, #24213a);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mobile-nav-icon {
+  display: grid;
+  gap: 4px;
+  width: 16px;
+}
+
+.mobile-nav-icon > span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform .16s ease, opacity .16s ease;
+}
+
+.mobile-nav-icon.is-open > span:first-child { transform: translateY(6px) rotate(45deg); }
+.mobile-nav-icon.is-open > span:nth-child(2) { opacity: 0; }
+.mobile-nav-icon.is-open > span:last-child { transform: translateY(-6px) rotate(-45deg); }
+
+@media (max-width: 760px) {
+  .site-header {
+    position: relative;
+    z-index: 30;
+    width: calc(100% - 32px);
+    height: auto;
+    min-height: 66px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 0;
+  }
+
+  .mobile-nav-toggle { display: inline-flex; margin-left: auto; }
+
+  .site-nav {
+    display: none;
+    position: absolute;
+    top: calc(100% + 1px);
+    right: 0;
+    left: 0;
+    z-index: 40;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid #e8e5f3;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, .98);
+    box-shadow: 0 18px 42px rgba(40, 32, 90, .13);
+  }
+
+  .site-nav.mobile-open { display: flex; }
+
+  .site-nav .nav-link {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .site-nav .nav-link:hover,
+  .site-nav .nav-link.active { background: #f4f2ff; }
+
+  .site-nav .nav-user {
+    display: block;
+    padding: 11px 12px 7px;
+    border-top: 1px solid #f0eef7;
+    color: var(--ink, #24213a);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .site-nav .button {
+    justify-content: center;
+    min-height: 40px;
+    margin-top: 3px;
+  }
+
+  .site-nav .button-quiet { width: 100%; }
+}
+
+/* ---------- Page layout adjustments ---------- */
+@media (max-width: 860px) {
+  .boards-page,
+  .admin-board-page,
+  .admin-post-page {
+    width: calc(100% - 36px);
+  }
+
+  .board-selector { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .post-list-heading-actions { flex-wrap: wrap; }
+  .post-table-wrap,
+  .admin-post-table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .post-table,
+  .admin-post-table { min-width: 630px; }
+  .comment-children { min-width: 0; }
+  .attachment-item { min-width: 0; }
+}
+
+@media (max-width: 640px) {
+  .boards-page,
+  .admin-board-page,
+  .admin-post-page { width: calc(100% - 28px); padding-top: 30px; padding-bottom: 54px; }
+
+  .boards-heading { margin-bottom: 20px; }
+  .boards-heading h1,
+  .admin-board-heading h1,
+  .admin-post-heading h1 { font-size: clamp(27px, 8vw, 34px); }
+
+  .board-selector { grid-template-columns: minmax(0, 1fr); gap: 9px; margin: 18px 0; }
+  .board-choice { padding: 13px; }
+  .post-list-panel { padding: 17px 13px; }
+  .post-list-heading { gap: 12px; }
+  .post-list-heading-actions { width: 100%; justify-content: space-between; align-items: center; }
+  .post-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .post-search input { grid-column: 1 / -1; width: 100%; min-height: 42px; }
+  .post-search button { min-width: 70px; }
+  .post-table { min-width: 600px; }
+  .post-table th,
+  .post-table td { padding: 11px 8px; }
+  .post-title-cell { min-width: 210px; }
+  .boards-footer-link { justify-content: flex-start; }
+
+  .post-page { width: calc(100% - 28px); margin-top: 26px; margin-bottom: 54px; }
+  .post-detail-header,
+  .post-detail-content,
+  .post-form-card { padding: 22px 17px; }
+  .post-detail-header h1,
+  .post-form-heading h1 { overflow-wrap: anywhere; }
+  .post-detail-content { min-height: 150px; font-size: 14px; }
+  .post-detail-meta { gap: 9px 14px; }
+  .post-detail-toolbar { align-items: stretch; }
+  .post-owner-actions { width: 100%; margin-left: 0; }
+  .post-owner-actions .button { flex: 1; justify-content: center; }
+  .post-detail-actions { flex-wrap: wrap; }
+  .post-detail-actions .button { flex: 1 1 auto; }
+  .post-create-form textarea { min-height: 190px; }
+
+  .comments-panel { padding: 20px 15px; }
+  .comments-heading-row { align-items: flex-start; }
+  .comment-head { flex-direction: column; }
+  .comment-actions { align-self: flex-start; flex-wrap: wrap; }
+  .comment-children { padding-left: 8px; }
+  .comment-children .comment-item { margin-left: 0 !important; }
+
+  .attachments-panel { padding: 20px 15px; }
+  .attachments-heading-row { align-items: flex-start; gap: 8px; }
+  .attachment-upload-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 9px; }
+  .attachment-selected-files { grid-column: 1 / -1; max-width: 100%; overflow-wrap: anywhere; }
+  .attachment-list { padding-left: 0; }
+  .attachment-item { flex-wrap: wrap; gap: 10px; }
+  .attachment-file-info { flex: 1 1 calc(100% - 54px); }
+  .attachment-actions { width: 100%; justify-content: flex-end; }
+
+  .admin-management-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .admin-panel-heading,
+  .admin-post-panel-heading { gap: 12px; }
+  .admin-panel-heading > .button { white-space: nowrap; }
+  .admin-category-item { flex-wrap: wrap; }
+  .admin-category-item .admin-row-actions { padding-right: 0; }
+  .admin-post-panel-heading { align-items: stretch; }
+  .admin-post-filters { padding: 16px; }
+  .admin-post-results-heading { padding: 17px 15px 9px; }
+  .admin-post-table { min-width: 690px; }
+  .admin-post-table-wrap { padding: 0 8px; }
+  .admin-post-pagination { padding-right: 10px; padding-left: 10px; }
+
+  .boards-alert,
+  .error-message { align-items: stretch; flex-direction: column; }
+  .boards-alert .button { align-self: flex-start; }
+}
+
+@keyframes board-ui-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-icon > span,
+  .boards-state[role='status']::before,
+  .attachment-state[role='status']::before,
+  .admin-post-inline-state[role='status']::before { animation: none; transition: none; }
+}
