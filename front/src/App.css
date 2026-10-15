@@ -437,3 +437,64 @@
   .admin-edit-form { margin-right: 12px; margin-left: 12px; }
   .admin-panel-footer { padding-right: 16px; padding-left: 16px; }
 }
+
+/* Frontend milestone 7: append this file to the END of front/src/App.css. */
+.admin-post-page { width: min(1160px, calc(100% - 48px)); margin: 0 auto; padding: 50px 0 82px; }
+.admin-post-heading { margin-bottom: 26px; }
+.admin-post-heading h1 { margin: 13px 0 8px; color: var(--ink, #25243a); font-size: clamp(30px, 4vw, 40px); letter-spacing: -1.5px; }
+.admin-post-heading p { margin: 0; color: #827f95; font-size: 14px; line-height: 1.75; }
+.admin-post-feedback { margin-bottom: 13px; }
+.admin-post-notice { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid #cfe9d9; border-radius: 12px; background: #f4fbf6; color: #26734a; font-size: 13px; line-height: 1.5; }
+.admin-post-notice > span { display: grid; place-items: center; flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; background: #d9f2e2; font-weight: 800; }
+.admin-post-panel { min-width: 0; overflow: hidden; border: 1px solid #e9e7f3; border-radius: 20px; background: #fff; box-shadow: 0 16px 44px rgba(42, 35, 90, .045); }
+.admin-post-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 25px 26px 22px; border-bottom: 1px solid #f0eef6; }
+.admin-post-panel-heading h2 { margin: 7px 0; color: var(--ink, #25243a); font-size: 22px; letter-spacing: -.6px; }
+.admin-post-panel-heading p { margin: 0; color: #89869c; font-size: 12px; line-height: 1.7; }
+.admin-post-filters { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 22px 26px; border-bottom: 1px solid #f0eef6; background: #fdfcff; }
+.admin-post-filters > label { color: #45425a; font-size: 12px; font-weight: 750; }
+.admin-post-filters select { width: 100%; min-height: 43px; padding: 10px 12px; border: 1px solid #e5e2f0; border-radius: 10px; background: #fff; color: #302e45; font: inherit; font-size: 13px; }
+.admin-post-filters select:focus, .admin-post-search input:focus { border-color: #9185ed; outline: none; box-shadow: 0 0 0 3px rgba(111, 95, 224, .1); }
+.admin-post-search { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.admin-post-search input { flex: 1; min-width: 180px; min-height: 40px; padding: 10px 12px; border: 1px solid #e5e2f0; border-radius: 10px; background: #fff; color: #28263d; font: inherit; font-size: 13px; }
+.admin-post-search input:disabled { background: #f4f3f8; cursor: not-allowed; }
+.admin-post-inline-state { padding: 12px 0; color: #827f95; font-size: 12px; }
+.admin-post-results-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 26px 10px; }
+.admin-post-results-heading > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; }
+.admin-post-results-heading strong { color: #343148; font-size: 14px; }
+.admin-post-results-heading > div > span { color: #89869c; font-size: 11px; }
+.admin-post-count { flex-shrink: 0; padding: 6px 10px; border-radius: 999px; background: #f2f1ff; color: #6558d3; font-size: 11px; font-weight: 800; }
+.admin-post-table-wrap { overflow-x: auto; padding: 0 16px; }
+.admin-post-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.admin-post-table th { padding: 12px 10px; border-bottom: 1px solid #eae8f3; color: #858197; font-size: 10px; font-weight: 750; white-space: nowrap; }
+.admin-post-table td { padding: 14px 10px; border-bottom: 1px solid #f0eef6; color: #5b586e; white-space: nowrap; }
+.admin-post-table tbody tr:last-child td { border-bottom: 0; }
+.admin-post-table tbody tr:hover { background: #fdfcff; }
+.admin-post-table td:first-child { min-width: 260px; max-width: 460px; }
+.admin-post-title-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.admin-post-title-link { overflow: hidden; color: #353149; font-size: 12px; font-weight: 750; text-decoration: none; text-overflow: ellipsis; }
+.admin-post-title-link:hover { color: var(--purple, #6655df); text-decoration: underline; text-underline-offset: 3px; }
+.admin-post-row-actions { display: flex; align-items: center; gap: 11px; }
+.admin-post-action { padding: 2px 0; border: 0; background: transparent; color: #6b659b; font: inherit; font-size: 11px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.admin-post-action:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 3px; }
+.admin-post-action-danger { color: #b94a5b; }
+.admin-post-action:disabled { cursor: not-allowed; opacity: .5; }
+.admin-post-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px 20px; color: #858197; text-align: center; }
+.admin-post-empty > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: #f2efff; color: #7062d4; font-size: 20px; }
+.admin-post-empty strong { color: #49465d; font-size: 13px; }
+.admin-post-empty p { margin: 0; font-size: 11px; line-height: 1.7; }
+.admin-post-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 20px 18px 24px; }
+.admin-post-pagination > span { min-width: 65px; color: #858197; text-align: center; font-size: 12px; }
+.admin-post-footer { display: flex; justify-content: flex-end; padding-top: 18px; }
+@media (max-width: 680px) {
+  .admin-post-page { width: calc(100% - 28px); padding-top: 32px; }
+  .admin-post-panel-heading { align-items: stretch; flex-direction: column; padding: 21px 17px 18px; }
+  .admin-post-panel-heading > .button { align-self: flex-start; }
+  .admin-post-filters { padding: 18px 17px; }
+  .admin-post-results-heading { padding-right: 17px; padding-left: 17px; }
+  .admin-post-table-wrap { padding: 0 9px; }
+  .admin-post-feedback { align-items: stretch; flex-direction: column; }
+}
+@media (max-width: 680px) {
+  .site-header { height: auto; min-height: 70px; flex-wrap: wrap; row-gap: 10px; padding: 12px 0; }
+  .site-nav { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 10px; }
+}

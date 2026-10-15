@@ -4,6 +4,7 @@ import AdminRoute from './components/AdminRoute'
 import AppLayout from './components/AppLayout'
 import { GuestRoute, ProtectedRoute } from './components/RouteGuards'
 import AdminBoardManagementPage from './pages/AdminBoardManagementPage'
+import AdminPostManagementPage from './pages/AdminPostManagementPage'
 import BoardsPage from './pages/BoardsPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
@@ -45,10 +46,8 @@ export default function App() {
           <Route path="/boards/:boardId/posts/new" element={<PostCreatePage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/posts/:postId/edit" element={<PostEditPage />} />
-          <Route
-            path="/admin/boards"
-            element={<AdminRoute><AdminBoardManagementPage /></AdminRoute>}
-          />
+          <Route path="/admin/boards" element={<AdminRoute><AdminBoardManagementPage /></AdminRoute>} />
+          <Route path="/admin/posts" element={<AdminRoute><AdminPostManagementPage /></AdminRoute>} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
