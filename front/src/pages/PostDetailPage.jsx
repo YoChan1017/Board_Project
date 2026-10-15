@@ -5,6 +5,7 @@ import CommentsSection from '../components/CommentsSection'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import { LoadingState } from '../components/FeedbackState'
 
 function formatDate(value) {
   if (!value) return '-'
@@ -32,12 +33,14 @@ export default function PostDetailPage() {
   const [error, setError] = useState('')
   const [actionError, setActionError] = useState('')
   const [likeError, setLikeError] = useState('')
+  const [copyStatus, setCopyStatus] = useState('')
 
   useEffect(() => {
     let cancelled = false
     async function loadPost() {
       setIsLoading(true)
       setError('')
+      setPost(null)
       try {
         const data = await boardApi.getPost(postId)
         if (!cancelled) setPost(data)
@@ -66,6 +69,21 @@ export default function PostDetailPage() {
     loadLikeStatus()
     return () => { cancelled = true }
   }, [postId])
+
+  async function handleCopyLink() {
+    setCopyStatus('')
+    if (!navigator.clipboard?.writeText) {
+      setCopyStatus('이 브라우저에서는 자동 복사를 지원하지 않습니다. 주소창의 URL을 복사해 주세요.')
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopyStatus('게시글 링크를 복사했습니다.')
+    } catch {
+      setCopyStatus('링크 복사 권한이 없습니다. 주소창의 URL을 복사해 주세요.')
+    }
+  }
 
   async function handleLikeToggle() {
     setIsChangingLike(true)
@@ -100,7 +118,7 @@ export default function PostDetailPage() {
   }
 
   if (isLoading) {
-    return <main className="post-page"><div className="boards-state" role="status">게시글을 불러오는 중입니다...</div></main>
+    return <main className="post-page"><LoadingState className="boards-state">게시글을 불러오는 중입니다...</LoadingState></main>
   }
 
   if (error || !post) {
@@ -121,7 +139,15 @@ export default function PostDetailPage() {
 
   return (
     <main className="post-page">
-      <div className="post-breadcrumb"><Link to="/boards">게시판</Link><span aria-hidden="true">/</span><span>{post.categoryName || '전체 글'}</span></div>
+      <div className="post-detail-topline">
+        <nav className="post-breadcrumb" aria-label="현재 위치">
+          <Link to="/boards">게시판</Link><span aria-hidden="true">/</span><span>{post.categoryName || '전체 글'}</span>
+        </nav>
+        <div className="post-share-actions">
+          <button type="button" className="button button-secondary button-small" onClick={handleCopyLink}>링크 복사</button>
+          {copyStatus && <span className="post-copy-status" role="status" aria-live="polite">{copyStatus}</span>}
+        </div>
+      </div>
       {actionError && <div className="boards-alert" role="alert">{actionError}</div>}
       <article className="post-detail-card">
         <header className="post-detail-header">
@@ -135,7 +161,7 @@ export default function PostDetailPage() {
             <span>작성일 {formatDate(post.createdAt)}</span>
             {post.updatedAt && post.updatedAt !== post.createdAt && <span>수정일 {formatDate(post.updatedAt)}</span>}
           </div>
-          <div className="post-detail-stats"><span>조회 {post.viewCount ?? 0}</span><span>좋아요 {visibleLikeCount}</span></div>
+          <div className="post-detail-stats"><span>조회 {(post.viewCount ?? 0).toLocaleString('ko-KR')}</span><span>좋아요 {visibleLikeCount.toLocaleString('ko-KR')}</span></div>
         </header>
         <div className="post-detail-content">{post.content}</div>
       </article>

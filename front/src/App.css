@@ -1367,3 +1367,79 @@ button:disabled,
     transition: none;
   }
 }
+
+/* Frontend 11차: append to the END of front/src/App.css. */
+
+/* Keep the current board search context easy to understand. */
+.board-search-summary {
+  margin: 2px 0 14px;
+  color: var(--text-muted, #737783);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.board-search-summary span {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  color: var(--purple, #6655df);
+  background: #f0edff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.board-posts-alert {
+  margin-top: 10px;
+}
+
+.post-detail-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.post-detail-topline .post-breadcrumb {
+  margin: 0;
+  padding: 9px 0;
+}
+
+.post-share-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-width: 0;
+}
+
+.post-copy-status {
+  max-width: 290px;
+  color: var(--ui-success-text, #237a64);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .post-detail-topline {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .post-share-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .post-copy-status {
+    max-width: 100%;
+  }
+
+  .board-search-summary {
+    margin-bottom: 12px;
+  }
+}
