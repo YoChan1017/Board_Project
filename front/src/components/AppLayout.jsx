@@ -1,6 +1,10 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
+function isAdmin(user) {
+  return ['ADMIN', 'ROLE_ADMIN'].includes(user?.role)
+}
+
 export default function AppLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -24,6 +28,7 @@ export default function AppLayout() {
             <>
               <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>대시보드</NavLink>
               <NavLink to="/boards" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>게시판</NavLink>
+              {isAdmin(user) && <NavLink to="/admin/boards" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>게시판 관리</NavLink>}
               <span className="nav-user">{user.nickname || user.username}</span>
               <button type="button" className="button button-quiet button-small" onClick={handleLogout}>로그아웃</button>
             </>

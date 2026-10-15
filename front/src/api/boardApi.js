@@ -6,9 +6,42 @@ export const boardApi = {
     return response.data
   },
 
+  async getBoard(boardId) {
+    const response = await apiClient.get(`/boards/${boardId}`)
+    return response.data
+  },
+
+  async createBoard(payload) {
+    const response = await apiClient.post('/boards', payload)
+    return response.data
+  },
+
+  async updateBoard(boardId, payload) {
+    const response = await apiClient.put(`/boards/${boardId}`, payload)
+    return response.data
+  },
+
+  async deleteBoard(boardId) {
+    await apiClient.delete(`/boards/${boardId}`)
+  },
+
   async getCategories(boardId) {
     const response = await apiClient.get(`/boards/${boardId}/categories`)
     return response.data
+  },
+
+  async createCategory(boardId, payload) {
+    const response = await apiClient.post(`/boards/${boardId}/categories`, payload)
+    return response.data
+  },
+
+  async updateCategory(categoryId, payload) {
+    const response = await apiClient.put(`/categories/${categoryId}`, payload)
+    return response.data
+  },
+
+  async deleteCategory(categoryId) {
+    await apiClient.delete(`/categories/${categoryId}`)
   },
 
   async getPosts(boardId, { page = 0, size = 10, keyword = '' } = {}) {
@@ -79,7 +112,6 @@ export const boardApi = {
   async uploadAttachment(postId, file) {
     const formData = new FormData()
     formData.append('file', file)
-    // Let the browser/Axios set the multipart boundary automatically.
     const response = await apiClient.post(`/posts/${postId}/attachments`, formData)
     return response.data
   },
