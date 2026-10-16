@@ -2227,3 +2227,144 @@ button:disabled,
     gap: 6px;
   }
 }
+
+/* Frontend milestone 18 */
+.global-search-advanced-panel {
+  margin-top: 19px;
+  padding-top: 17px;
+  border-top: 1px solid #f0eef8;
+}
+
+.global-search-advanced-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.global-search-advanced-heading h3 {
+  margin: 0;
+  color: var(--ink, #29263f);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.global-search-advanced-heading > span {
+  color: #9691a7;
+  font-size: 10px;
+}
+
+.global-search-advanced-form {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.4fr) repeat(2, minmax(140px, 1fr)) auto;
+  align-items: end;
+  gap: 11px;
+}
+
+.global-search-advanced-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.global-search-advanced-field label {
+  color: #6f6b83;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.global-search-advanced-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #e1deee;
+  border-radius: 9px;
+  color: var(--ink, #29263f);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
+.global-search-advanced-field input:focus-visible {
+  outline: 3px solid rgba(101, 86, 217, .22);
+  outline-offset: 2px;
+  border-color: #a69af3;
+}
+
+.global-search-advanced-field input:disabled {
+  color: #a09bae;
+  background: #f8f7fb;
+  cursor: not-allowed;
+}
+
+.global-search-advanced-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.global-search-advanced-actions .button {
+  white-space: nowrap;
+}
+
+.global-search-advanced-help {
+  margin: 10px 0 0;
+  color: #9691a7;
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.global-search-filter-summary {
+  align-items: flex-start;
+}
+
+.global-search-filter-summary > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+
+@media (max-width: 900px) {
+  .global-search-advanced-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .global-search-author-field {
+    grid-column: 1 / -1;
+  }
+
+  .global-search-advanced-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 540px) {
+  .global-search-advanced-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .global-search-advanced-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .global-search-author-field,
+  .global-search-advanced-actions {
+    grid-column: auto;
+  }
+
+  .global-search-advanced-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .global-search-advanced-actions .button {
+    width: 100%;
+  }
+}
