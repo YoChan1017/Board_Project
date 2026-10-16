@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
+import { ErrorMessage, LoadingState } from '../components/FeedbackState'
 import PostContentField from '../components/PostContentField'
 
 export default function PostCreatePage() {
@@ -15,18 +16,23 @@ export default function PostCreatePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [loadVersion, setLoadVersion] = useState(0)
 
   useEffect(() => {
     let cancelled = false
+
     async function loadFormData() {
       setIsLoading(true)
       setError('')
+      setBoard(null)
+      setCategories([])
       try {
-        const [boards, categoryData] = await Promise.all([
+        const [boardData, categoryData] = await Promise.all([
           boardApi.getBoards(),
           boardApi.getCategories(boardId),
         ])
-        const selectedBoard = boards.find((item) => String(item.id) === String(boardId))
+        const safeBoards = Array.isArray(boardData) ? boardData : []
+        const selectedBoard = safeBoards.find((item) => String(item.id) === String(boardId))
         if (!selectedBoard) throw new Error('선택한 게시판을 찾을 수 없습니다.')
         if (!cancelled) {
           setBoard(selectedBoard)
@@ -38,9 +44,10 @@ export default function PostCreatePage() {
         if (!cancelled) setIsLoading(false)
       }
     }
+
     loadFormData()
     return () => { cancelled = true }
-  }, [boardId])
+  }, [boardId, loadVersion])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -70,15 +77,29 @@ export default function PostCreatePage() {
   }
 
   if (isLoading) {
-    return <main className="post-page"><div className="boards-state" role="status">작성 화면을 준비하고 있습니다...</div></main>
+    return (
+      <main className="post-page">
+        <LoadingState className="boards-state milestone-19-page-state">작성 화면을 준비하고 있습니다...</LoadingState>
+      </main>
+    )
   }
 
   if (!board) {
     return (
       <main className="post-page">
-        <section className="post-error" role="alert">
-          <h1>게시판을 열 수 없습니다.</h1><p>{error || '게시판 정보를 찾을 수 없습니다.'}</p>
-          <Link to="/boards" className="button button-primary">게시판으로 돌아가기</Link>
+        <section className="post-error milestone-19-feedback-card" aria-labelledby="post-create-unavailable-title">
+          <span className="eyebrow">POST CREATION UNAVAILABLE</span>
+          <h1 id="post-create-unavailable-title">게시판을 열 수 없습니다.</h1>
+          <ErrorMessage
+            className="milestone-19-state-error"
+            actionLabel="다시 시도"
+            onAction={() => setLoadVersion((current) => current + 1)}
+          >
+            {error || '게시판 정보를 불러오지 못했습니다.'}
+          </ErrorMessage>
+          <div className="milestone-19-state-actions">
+            <Link to="/boards" className="button button-secondary">게시판으로 돌아가기</Link>
+          </div>
         </section>
       </main>
     )
@@ -89,8 +110,8 @@ export default function PostCreatePage() {
       <div className="post-breadcrumb"><Link to="/boards">게시판</Link><span aria-hidden="true">/</span><span>{board.name}</span><span aria-hidden="true">/</span><span>글쓰기</span></div>
       <section className="post-form-card">
         <div className="post-form-heading"><span className="eyebrow"><span className="eyebrow-dot" /> WRITE A POST</span><h1>새 게시글 작성</h1><p>{board.name} 게시판에 새 글을 등록합니다.</p></div>
-        {error && <div className="boards-alert" role="alert">{error}</div>}
-        <form className="post-create-form" onSubmit={handleSubmit}>
+        {error && <ErrorMessage className="boards-alert milestone-19-form-error">{error}</ErrorMessage>}
+        <form className="post-create-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <label htmlFor="post-category">카테고리 <span className="form-optional">선택</span></label>
           <select id="post-category" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); setError('') }} disabled={isSubmitting}>
             <option value="">카테고리 없음</option>

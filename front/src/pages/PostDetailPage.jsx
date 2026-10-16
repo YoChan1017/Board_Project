@@ -5,7 +5,7 @@ import CommentsSection from '../components/CommentsSection'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import { LoadingState } from '../components/FeedbackState'
+import { EmptyState, ErrorMessage, LoadingState } from '../components/FeedbackState'
 import { recordRecentPost } from '../utils/recentPostHistory'
 
 function formatDate(value) {
@@ -31,31 +31,45 @@ export default function PostDetailPage() {
   const [post, setPost] = useState(null)
   const [likeStatus, setLikeStatus] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingLike, setIsLoadingLike] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isChangingLike, setIsChangingLike] = useState(false)
   const [error, setError] = useState('')
+  const [isNotFound, setIsNotFound] = useState(false)
   const [actionError, setActionError] = useState('')
   const [likeError, setLikeError] = useState('')
   const [copyStatus, setCopyStatus] = useState('')
+  const [postReloadVersion, setPostReloadVersion] = useState(0)
+  const [likeReloadVersion, setLikeReloadVersion] = useState(0)
 
   useEffect(() => {
     let cancelled = false
+
     async function loadPost() {
       setIsLoading(true)
       setError('')
+      setIsNotFound(false)
       setPost(null)
       try {
         const data = await boardApi.getPost(postId)
         if (!cancelled) setPost(data)
       } catch (requestError) {
-        if (!cancelled) setError(getErrorMessage(requestError, '게시글을 불러오지 못했습니다.'))
+        if (!cancelled) {
+          if (requestError.response?.status === 404) {
+            setIsNotFound(true)
+            setError('게시글이 삭제되었거나 주소가 잘못되었을 수 있습니다.')
+          } else {
+            setError(getErrorMessage(requestError, '게시글을 불러오지 못했습니다.'))
+          }
+        }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
     }
+
     loadPost()
     return () => { cancelled = true }
-  }, [postId])
+  }, [postId, postReloadVersion])
 
   // Save only lightweight metadata, scoped to the signed-in browser account.
   useEffect(() => {
@@ -72,7 +86,9 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     let cancelled = false
+
     async function loadLikeStatus() {
+      setIsLoadingLike(true)
       setLikeError('')
       setLikeStatus(null)
       try {
@@ -80,11 +96,14 @@ export default function PostDetailPage() {
         if (!cancelled) setLikeStatus(data)
       } catch (requestError) {
         if (!cancelled) setLikeError(getErrorMessage(requestError, '좋아요 상태를 확인하지 못했습니다.'))
+      } finally {
+        if (!cancelled) setIsLoadingLike(false)
       }
     }
+
     loadLikeStatus()
     return () => { cancelled = true }
-  }, [postId])
+  }, [postId, likeReloadVersion])
 
   async function handleCopyLink() {
     setCopyStatus('')
@@ -102,10 +121,11 @@ export default function PostDetailPage() {
   }
 
   async function handleLikeToggle() {
+    if (!likeStatus || isChangingLike) return
     setIsChangingLike(true)
     setLikeError('')
     try {
-      const result = likeStatus?.likedByMe
+      const result = likeStatus.likedByMe
         ? await boardApi.removeLike(postId)
         : await boardApi.addLike(postId)
       setLikeStatus(result)
@@ -134,17 +154,46 @@ export default function PostDetailPage() {
   }
 
   if (isLoading) {
-    return <main className="post-page"><LoadingState className="boards-state">게시글을 불러오는 중입니다...</LoadingState></main>
+    return (
+      <main className="post-page">
+        <LoadingState className="boards-state milestone-19-page-state">게시글을 불러오는 중입니다...</LoadingState>
+      </main>
+    )
+  }
+
+  if (isNotFound) {
+    return (
+      <main className="post-page">
+        <EmptyState
+          className="post-error milestone-19-feedback-card milestone-19-empty-state"
+          icon="⌕"
+          title="게시글을 찾을 수 없습니다."
+          description={error || '게시글이 삭제되었거나 주소가 잘못되었을 수 있습니다.'}
+        >
+          <div className="milestone-19-state-actions">
+            <Link to="/boards" className="button button-primary">게시판으로 돌아가기</Link>
+          </div>
+        </EmptyState>
+      </main>
+    )
   }
 
   if (error || !post) {
     return (
       <main className="post-page">
-        <section className="post-error" role="alert">
+        <section className="post-error milestone-19-feedback-card" aria-labelledby="post-unavailable-title">
           <span className="eyebrow">POST UNAVAILABLE</span>
-          <h1>게시글을 불러올 수 없습니다.</h1>
-          <p>{error || '요청한 게시글이 존재하지 않습니다.'}</p>
-          <button type="button" className="button button-primary" onClick={() => navigate('/boards')}>게시판으로 돌아가기</button>
+          <h1 id="post-unavailable-title">게시글을 불러올 수 없습니다.</h1>
+          <ErrorMessage
+            className="milestone-19-state-error"
+            actionLabel="다시 불러오기"
+            onAction={() => setPostReloadVersion((current) => current + 1)}
+          >
+            {error || '요청한 게시글을 불러오지 못했습니다.'}
+          </ErrorMessage>
+          <div className="milestone-19-state-actions">
+            <Link to="/boards" className="button button-secondary">게시판 목록</Link>
+          </div>
         </section>
       </main>
     )
@@ -164,7 +213,7 @@ export default function PostDetailPage() {
           {copyStatus && <span className="post-copy-status" role="status" aria-live="polite">{copyStatus}</span>}
         </div>
       </div>
-      {actionError && <div className="boards-alert" role="alert">{actionError}</div>}
+      {actionError && <ErrorMessage className="boards-alert milestone-19-action-error">{actionError}</ErrorMessage>}
       <article className="post-detail-card">
         <header className="post-detail-header">
           <div className="post-detail-labels">
@@ -189,15 +238,23 @@ export default function PostDetailPage() {
           type="button"
           className={`button ${likeStatus?.likedByMe ? 'button-primary' : 'button-secondary'} like-button`}
           onClick={handleLikeToggle}
-          disabled={isChangingLike || likeStatus === null}
+          disabled={isChangingLike || isLoadingLike || likeStatus === null}
           aria-pressed={Boolean(likeStatus?.likedByMe)}
-          title={likeStatus === null ? '좋아요 상태를 불러오는 중입니다.' : undefined}
+          title={likeStatus === null ? '좋아요 상태를 확인 중입니다.' : undefined}
         >
           <span aria-hidden="true">{likeStatus?.likedByMe ? '♥' : '♡'}</span>
-          {isChangingLike ? '처리 중...' : likeStatus?.likedByMe ? '좋아요 취소' : '좋아요'}
+          {isChangingLike ? '처리 중...' : isLoadingLike ? '상태 확인 중...' : likeStatus?.likedByMe ? '좋아요 취소' : '좋아요'}
           <span className="like-count-pill">{visibleLikeCount}</span>
         </button>
-        {likeError && <span className="like-error" role="status">{likeError}</span>}
+        {likeError && (
+          <ErrorMessage
+            className="like-error-feedback"
+            actionLabel="다시 확인"
+            onAction={() => setLikeReloadVersion((current) => current + 1)}
+          >
+            {likeError}
+          </ErrorMessage>
+        )}
         {canManagePost && (
           <div className="post-owner-actions">
             <Link to={`/posts/${post.id}/edit`} className="button button-secondary">수정</Link>

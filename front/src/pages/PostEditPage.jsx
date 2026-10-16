@@ -3,7 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import { ErrorMessage, LoadingState } from '../components/FeedbackState'
 import PostContentField from '../components/PostContentField'
+
+function isAdmin(user) {
+  return ['ADMIN', 'ROLE_ADMIN'].includes(user?.role)
+}
 
 export default function PostEditPage() {
   const { postId } = useParams()
@@ -17,6 +22,8 @@ export default function PostEditPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [accessDenied, setAccessDenied] = useState(false)
+  const [loadVersion, setLoadVersion] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -24,13 +31,22 @@ export default function PostEditPage() {
     async function loadEditData() {
       setIsLoading(true)
       setError('')
+      setPost(null)
+      setCategories([])
+      setAccessDenied(false)
       try {
         const data = await boardApi.getPost(postId)
+        const canManage = String(user?.userId) === String(data.authorId) || isAdmin(user)
+        if (!canManage) {
+          if (!cancelled) {
+            setPost(data)
+            setAccessDenied(true)
+            setError('게시글 작성자 또는 관리자만 수정할 수 있습니다.')
+          }
+          return
+        }
+
         const categoryData = await boardApi.getCategories(data.boardId)
-        const canManage = String(user?.userId) === String(data.authorId) || ['ADMIN', 'ROLE_ADMIN'].includes(user?.role)
-
-        if (!canManage) throw new Error('게시글 작성자 또는 관리자만 수정할 수 있습니다.')
-
         if (!cancelled) {
           setPost(data)
           setCategories(Array.isArray(categoryData) ? categoryData : [])
@@ -39,7 +55,14 @@ export default function PostEditPage() {
           setCategoryId(data.categoryId == null ? '' : String(data.categoryId))
         }
       } catch (requestError) {
-        if (!cancelled) setError(getErrorMessage(requestError, '수정할 게시글을 불러오지 못했습니다.'))
+        if (!cancelled) {
+          if (requestError.response?.status === 403) {
+            setAccessDenied(true)
+            setError('이 게시글을 수정할 권한이 없습니다.')
+          } else {
+            setError(getErrorMessage(requestError, '수정할 게시글을 불러오지 못했습니다.'))
+          }
+        }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -47,7 +70,7 @@ export default function PostEditPage() {
 
     loadEditData()
     return () => { cancelled = true }
-  }, [postId, user?.userId, user?.role])
+  }, [postId, user?.userId, user?.role, loadVersion])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -78,17 +101,45 @@ export default function PostEditPage() {
   }
 
   if (isLoading) {
-    return <main className="post-page"><div className="boards-state" role="status">수정할 게시글을 불러오는 중입니다...</div></main>
+    return (
+      <main className="post-page">
+        <LoadingState className="boards-state milestone-19-page-state">수정할 게시글을 불러오는 중입니다...</LoadingState>
+      </main>
+    )
+  }
+
+  if (accessDenied) {
+    return (
+      <main className="post-page">
+        <section className="post-error milestone-19-feedback-card" aria-labelledby="post-edit-access-title" role="alert">
+          <span className="eyebrow">ACCESS RESTRICTED</span>
+          <h1 id="post-edit-access-title">게시글을 수정할 권한이 없습니다.</h1>
+          <p>{error || '게시글 작성자 또는 관리자만 수정할 수 있습니다.'}</p>
+          <div className="milestone-19-state-actions">
+            {post && <Link to={`/posts/${postId}`} className="button button-primary">게시글로 돌아가기</Link>}
+            <Link to="/boards" className="button button-secondary">게시판 목록</Link>
+          </div>
+        </section>
+      </main>
+    )
   }
 
   if (!post) {
     return (
       <main className="post-page">
-        <section className="post-error" role="alert">
+        <section className="post-error milestone-19-feedback-card" aria-labelledby="post-edit-unavailable-title">
           <span className="eyebrow">POST EDIT UNAVAILABLE</span>
-          <h1>게시글을 수정할 수 없습니다.</h1>
-          <p>{error || '게시글 정보를 찾을 수 없습니다.'}</p>
-          <button type="button" className="button button-primary" onClick={() => navigate('/boards')}>게시판으로 돌아가기</button>
+          <h1 id="post-edit-unavailable-title">수정할 게시글을 불러올 수 없습니다.</h1>
+          <ErrorMessage
+            className="milestone-19-state-error"
+            actionLabel="다시 시도"
+            onAction={() => setLoadVersion((current) => current + 1)}
+          >
+            {error || '게시글 정보를 불러오지 못했습니다.'}
+          </ErrorMessage>
+          <div className="milestone-19-state-actions">
+            <Link to="/boards" className="button button-secondary">게시판으로 돌아가기</Link>
+          </div>
         </section>
       </main>
     )
@@ -103,8 +154,8 @@ export default function PostEditPage() {
           <h1>게시글 수정</h1>
           <p>수정 사항을 확인한 뒤 저장해 주세요.</p>
         </div>
-        {error && <div className="boards-alert" role="alert">{error}</div>}
-        <form className="post-create-form" onSubmit={handleSubmit}>
+        {error && <ErrorMessage className="boards-alert milestone-19-form-error">{error}</ErrorMessage>}
+        <form className="post-create-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <label htmlFor="edit-post-category">카테고리 <span className="form-optional">선택</span></label>
           <select id="edit-post-category" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); setError('') }} disabled={isSubmitting}>
             <option value="">카테고리 없음</option>

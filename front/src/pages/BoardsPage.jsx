@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
-import { ErrorMessage, LoadingState } from '../components/FeedbackState'
+import { EmptyState, ErrorMessage, LoadingState } from '../components/FeedbackState'
 
 const CATEGORY_FILTER_PAGE_SIZE = 100
 const TITLE_COLLATOR = new Intl.Collator('ko-KR', { numeric: true, sensitivity: 'base' })
@@ -80,9 +80,7 @@ export default function BoardsPage() {
           setPostsPage(postData)
         }
       } catch (requestError) {
-        if (!cancelled) {
-          setPostsError(getErrorMessage(requestError, '게시글을 불러오지 못했습니다.'))
-        }
+        if (!cancelled) setPostsError(getErrorMessage(requestError, '게시글을 불러오지 못했습니다.'))
       } finally {
         if (!cancelled) setIsLoadingPosts(false)
       }
@@ -153,19 +151,23 @@ export default function BoardsPage() {
         <p>관심 있는 게시판을 선택하고 최신 글을 확인하세요.</p>
       </section>
 
-      {boardsError && (
+      {boardsError && boards.length > 0 && (
         <ErrorMessage className="boards-alert" actionLabel="게시판 다시 불러오기" onAction={loadBoards}>
           {boardsError}
         </ErrorMessage>
       )}
 
       {isLoadingBoards ? (
-        <LoadingState className="boards-state">게시판 목록을 불러오는 중입니다...</LoadingState>
+        <LoadingState className="boards-state milestone-19-page-state">게시판 목록을 불러오는 중입니다...</LoadingState>
       ) : boards.length === 0 ? (
-        <section className="boards-empty">
-          <h2>{boardsError ? '게시판 목록을 확인할 수 없습니다.' : '등록된 게시판이 없습니다.'}</h2>
-          <p>{boardsError ? '연결 상태를 확인한 뒤 다시 시도해 주세요.' : '백엔드 데이터베이스에 게시판을 먼저 등록해 주세요.'}</p>
-        </section>
+        <EmptyState
+          className="boards-empty milestone-19-empty-state"
+          icon={boardsError ? '!' : 'B'}
+          title={boardsError ? '게시판 목록을 표시할 수 없습니다.' : '등록된 게시판이 없습니다.'}
+          description={boardsError ? '연결 상태를 확인한 뒤 다시 시도해 주세요.' : '게시판이 등록되면 이곳에서 게시글을 확인할 수 있습니다.'}
+        >
+          {boardsError && <button type="button" className="button button-primary button-small" onClick={loadBoards} disabled={isLoadingBoards}>다시 시도</button>}
+        </EmptyState>
       ) : (
         <>
           <section className="board-selector" aria-label="게시판 선택">
@@ -291,15 +293,17 @@ export default function BoardsPage() {
             )}
 
             {isLoadingPosts ? (
-              <LoadingState className="boards-state">게시글을 불러오는 중입니다...</LoadingState>
+              <LoadingState className="boards-state milestone-19-page-state">게시글을 불러오는 중입니다...</LoadingState>
             ) : postsError ? null : visiblePostItems.length === 0 ? (
-              <div className="posts-empty">
-                <span className="posts-empty-icon" aria-hidden="true">✎</span>
-                <h3>{isCategoryFilterActive ? '선택한 조건에 맞는 게시글이 없습니다.' : keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.'}</h3>
-                <p>{isCategoryFilterActive ? '다른 카테고리를 선택하거나 필터를 초기화해 보세요.' : keyword ? '검색어를 변경하거나 초기화해 보세요.' : '첫 게시글을 작성해 보세요.'}</p>
+              <EmptyState
+                className="posts-empty milestone-19-empty-state"
+                icon="✎"
+                title={isCategoryFilterActive ? '선택한 조건에 맞는 게시글이 없습니다.' : keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.'}
+                description={isCategoryFilterActive ? '다른 카테고리를 선택하거나 필터를 초기화해 보세요.' : keyword ? '검색어를 변경하거나 초기화해 보세요.' : '첫 게시글을 작성해 보세요.'}
+              >
                 {isCategoryFilterActive && <button type="button" className="button button-secondary button-small" onClick={() => { setSelectedCategoryId('all'); setPage(0) }}>카테고리 필터 초기화</button>}
                 {!keyword && !isCategoryFilterActive && selectedBoardId && <Link to={`/boards/${selectedBoardId}/posts/new`} className="text-link">첫 글 작성하기 →</Link>}
-              </div>
+              </EmptyState>
             ) : (
               <>
                 <div className="post-table-wrap">
