@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
+import PostContentField from '../components/PostContentField'
 
 export default function PostCreatePage() {
   const { boardId } = useParams()
@@ -91,17 +92,28 @@ export default function PostCreatePage() {
         {error && <div className="boards-alert" role="alert">{error}</div>}
         <form className="post-create-form" onSubmit={handleSubmit}>
           <label htmlFor="post-category">카테고리 <span className="form-optional">선택</span></label>
-          <select id="post-category" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+          <select id="post-category" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); setError('') }} disabled={isSubmitting}>
             <option value="">카테고리 없음</option>
             {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
 
           <label htmlFor="post-title">제목 <span className="form-required">필수</span></label>
-          <input id="post-title" type="text" maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="제목을 입력해 주세요" required />
-          <div className="post-input-hint">{title.length} / 200자</div>
+          <input
+            id="post-title"
+            type="text"
+            maxLength={200}
+            value={title}
+            onChange={(event) => { setTitle(event.target.value); setError('') }}
+            placeholder="제목을 입력해 주세요"
+            aria-describedby="post-title-help"
+            required
+            disabled={isSubmitting}
+          />
+          <div id="post-title-help" className="post-input-hint">{title.length} / 200자</div>
 
           <label htmlFor="post-content">내용 <span className="form-required">필수</span></label>
-          <textarea id="post-content" rows={14} value={content} onChange={(event) => setContent(event.target.value)} placeholder="게시글 내용을 입력해 주세요" required />
+          <PostContentField id="post-content" value={content} onChange={(value) => { setContent(value); setError('') }} disabled={isSubmitting} />
+
           <div className="post-form-actions">
             <Link to="/boards" className="button button-secondary">취소</Link>
             <button type="submit" className="button button-primary" disabled={isSubmitting}>{isSubmitting ? '등록 중...' : '게시글 등록'}</button>

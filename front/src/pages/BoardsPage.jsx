@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { ErrorMessage, LoadingState } from '../components/FeedbackState'
+
+const TITLE_COLLATOR = new Intl.Collator('ko-KR', { numeric: true, sensitivity: 'base' })
 
 function formatDate(value) {
   if (!value) return '-'
@@ -21,6 +23,8 @@ export default function BoardsPage() {
   const [keywordInput, setKeywordInput] = useState('')
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [sortBy, setSortBy] = useState('latest')
   const [contentReloadKey, setContentReloadKey] = useState(0)
   const [isLoadingBoards, setIsLoadingBoards] = useState(true)
   const [isLoadingPosts, setIsLoadingPosts] = useState(false)
@@ -62,7 +66,7 @@ export default function BoardsPage() {
       try {
         const [categoryData, postData] = await Promise.all([
           boardApi.getCategories(selectedBoardId),
-          boardApi.getPosts(selectedBoardId, { page, size: 10, keyword }),
+          boardApi.getPosts(selectedBoardId, { page, size: pageSize, keyword }),
         ])
         if (!cancelled) {
           setCategories(Array.isArray(categoryData) ? categoryData : [])
@@ -79,7 +83,7 @@ export default function BoardsPage() {
 
     loadBoardContent()
     return () => { cancelled = true }
-  }, [selectedBoardId, page, keyword, contentReloadKey])
+  }, [selectedBoardId, page, pageSize, keyword, contentReloadKey])
 
   const handleSearch = (event) => {
     event.preventDefault()
@@ -104,6 +108,15 @@ export default function BoardsPage() {
   }
 
   const postItems = postsPage?.content ?? []
+  const sortedPostItems = useMemo(() => {
+    const items = [...postItems]
+    if (sortBy === 'title') return items.sort((a, b) => TITLE_COLLATOR.compare(a.title ?? '', b.title ?? ''))
+    if (sortBy === 'views') return items.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
+    if (sortBy === 'likes') return items.sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0))
+    // The API's default order is newest first; keep it unchanged for this option.
+    return items
+  }, [postItems, sortBy])
+
   const totalPages = postsPage?.totalPages ?? 0
   const totalElements = postsPage?.totalElements ?? 0
   const selectedBoard = boards.find((board) => String(board.id) === selectedBoardId)
@@ -188,6 +201,32 @@ export default function BoardsPage() {
               )}
             </form>
 
+            <div className="board-explorer-controls" aria-label="게시글 표시 옵션">
+              <div className="board-explorer-control">
+                <label htmlFor="post-page-size">페이지당 게시글</label>
+                <select
+                  id="post-page-size"
+                  value={pageSize}
+                  onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0) }}
+                  disabled={isLoadingPosts}
+                >
+                  <option value={10}>10개</option>
+                  <option value={20}>20개</option>
+                  <option value={50}>50개</option>
+                </select>
+              </div>
+              <div className="board-explorer-control">
+                <label htmlFor="post-sort-order">현재 페이지 정렬</label>
+                <select id="post-sort-order" value={sortBy} onChange={(event) => setSortBy(event.target.value)} disabled={isLoadingPosts}>
+                  <option value="latest">최신순</option>
+                  <option value="title">제목 가나다순</option>
+                  <option value="views">조회 많은 순</option>
+                  <option value="likes">좋아요 많은 순</option>
+                </select>
+              </div>
+              <p>정렬은 현재 불러온 페이지 안에서만 적용됩니다.</p>
+            </div>
+
             {keyword && (
               <p className="board-search-summary" aria-live="polite">
                 <span>검색어</span> “{keyword}” · {totalElements.toLocaleString('ko-KR')}개 결과
@@ -206,7 +245,7 @@ export default function BoardsPage() {
 
             {isLoadingPosts ? (
               <LoadingState className="boards-state">게시글을 불러오는 중입니다...</LoadingState>
-            ) : postsError ? null : postItems.length === 0 ? (
+            ) : postsError ? null : sortedPostItems.length === 0 ? (
               <div className="posts-empty">
                 <span className="posts-empty-icon" aria-hidden="true">✎</span>
                 <h3>{keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.'}</h3>
@@ -219,7 +258,7 @@ export default function BoardsPage() {
                   <table className="post-table">
                     <thead><tr><th scope="col">제목</th><th scope="col">작성자</th><th scope="col">조회</th><th scope="col">좋아요</th><th scope="col">작성일</th></tr></thead>
                     <tbody>
-                      {postItems.map((post) => (
+                      {sortedPostItems.map((post) => (
                         <tr key={post.id}>
                           <td><div className="post-title-cell">{post.categoryName && <span className="category-inline">{post.categoryName}</span>}<Link to={`/posts/${post.id}`} className="post-title-link">{post.title}</Link></div></td>
                           <td>{post.authorNickname || '-'}</td>
