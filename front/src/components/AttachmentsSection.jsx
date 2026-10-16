@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { EmptyState, ErrorMessage, LoadingState, SuccessMessage } from './FeedbackState'
@@ -23,6 +23,10 @@ function formatDate(value) {
   }).format(date)
 }
 
+function fileKey(file) {
+  return `${file.name}:${file.size}:${file.lastModified}`
+}
+
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
@@ -38,11 +42,18 @@ function triggerDownload(blob, filename) {
 export default function AttachmentsSection({ postId, canManage }) {
   const [attachments, setAttachments] = useState([])
   const [selectedFiles, setSelectedFiles] = useState([])
+  const [isDragOver, setIsDragOver] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [busyAttachmentId, setBusyAttachmentId] = useState(null)
   const [error, setError] = useState('')
+  const [selectionError, setSelectionError] = useState('')
   const [notice, setNotice] = useState('')
+
+  const selectedTotalSize = useMemo(
+    () => selectedFiles.reduce((total, file) => total + file.size, 0),
+    [selectedFiles],
+  )
 
   const loadAttachments = useCallback(async () => {
     setIsLoading(true)
@@ -61,13 +72,67 @@ export default function AttachmentsSection({ postId, canManage }) {
     loadAttachments()
   }, [loadAttachments])
 
-  function handleFileChange(event) {
-    const files = Array.from(event.target.files ?? [])
-    setSelectedFiles(files)
+  function addFiles(fileList) {
+    const incomingFiles = Array.from(fileList ?? [])
+    if (incomingFiles.length === 0 || isUploading) return
+
+    const nextFiles = [...selectedFiles]
+    const knownKeys = new Set(nextFiles.map(fileKey))
+    const messages = []
+
+    for (const file of incomingFiles) {
+      if (file.size === 0) {
+        messages.push(`${file.name}: 빈 파일은 첨부할 수 없습니다.`)
+        continue
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        messages.push(`${file.name}: 파일 크기는 10MB 이하여야 합니다.`)
+        continue
+      }
+
+      const key = fileKey(file)
+      if (knownKeys.has(key)) {
+        messages.push(`${file.name}: 이미 선택한 파일입니다.`)
+        continue
+      }
+
+      nextFiles.push(file)
+      knownKeys.add(key)
+    }
+
+    setSelectedFiles(nextFiles)
+    setSelectionError(messages.join('\n'))
     setError('')
     setNotice('')
-    // Let the same file be selected again after an unsuccessful attempt.
+  }
+
+  function handleFileChange(event) {
+    addFiles(event.target.files)
+    // Clear the input so the same file can be selected again after removal or failure.
     event.target.value = ''
+  }
+
+  function handleDragOver(event) {
+    event.preventDefault()
+    if (!isUploading) setIsDragOver(true)
+  }
+
+  function handleDragLeave(event) {
+    if (!event.currentTarget.contains(event.relatedTarget)) setIsDragOver(false)
+  }
+
+  function handleDrop(event) {
+    event.preventDefault()
+    setIsDragOver(false)
+    if (!isUploading) addFiles(event.dataTransfer?.files)
+  }
+
+  function removeSelectedFile(targetKey) {
+    if (isUploading) return
+    setSelectedFiles((current) => current.filter((file) => fileKey(file) !== targetKey))
+    setSelectionError('')
+    setError('')
+    setNotice('')
   }
 
   async function handleUpload(event) {
@@ -77,20 +142,26 @@ export default function AttachmentsSection({ postId, canManage }) {
       return
     }
 
+    const filesToUpload = [...selectedFiles]
     setIsUploading(true)
     setError('')
+    setSelectionError('')
     setNotice('')
     const errors = []
+    const failedFiles = []
     let successfulCount = 0
 
     try {
-      for (const file of selectedFiles) {
+      for (const file of filesToUpload) {
+        // Keep validation here too so the upload path remains safe if selection logic changes.
         if (file.size > MAX_FILE_SIZE) {
           errors.push(`${file.name}: 파일 크기는 10MB 이하여야 합니다.`)
+          failedFiles.push(file)
           continue
         }
         if (file.size === 0) {
           errors.push(`${file.name}: 빈 파일은 업로드할 수 없습니다.`)
+          failedFiles.push(file)
           continue
         }
 
@@ -100,15 +171,19 @@ export default function AttachmentsSection({ postId, canManage }) {
           successfulCount += 1
         } catch (requestError) {
           errors.push(`${file.name}: ${getErrorMessage(requestError, '업로드에 실패했습니다.')}`)
+          failedFiles.push(file)
         }
       }
-      setSelectedFiles([])
+
+      // Successful files leave the queue; failed ones stay selected for an easy retry.
+      setSelectedFiles(failedFiles)
       if (successfulCount > 0) {
-        setNotice(`${successfulCount}개 파일을 업로드했습니다.`)
+        const remainingMessage = failedFiles.length > 0
+          ? ` 실패한 ${failedFiles.length}개 파일은 선택 목록에 남겨 두었습니다.`
+          : ''
+        setNotice(`${successfulCount}개 파일을 업로드했습니다.${remainingMessage}`)
       }
-      if (errors.length > 0) {
-        setError(errors.join('\n'))
-      }
+      if (errors.length > 0) setError(errors.join('\n'))
     } finally {
       setIsUploading(false)
     }
@@ -158,28 +233,72 @@ export default function AttachmentsSection({ postId, canManage }) {
 
       {error && <ErrorMessage className="boards-alert attachment-alert">{error}</ErrorMessage>}
       {notice && <SuccessMessage className="attachment-notice" as="p">{notice}</SuccessMessage>}
+      {selectionError && <ErrorMessage className="boards-alert attachment-alert">{selectionError}</ErrorMessage>}
 
       {canManage && (
         <form className="attachment-upload-form" onSubmit={handleUpload}>
-          <label className="attachment-file-label" htmlFor="post-attachments">
-            <span aria-hidden="true">＋</span> 파일 선택
-          </label>
-          <input
-            id="post-attachments"
-            className="attachment-file-input"
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            disabled={isUploading}
-          />
-          <span className="attachment-selected-files">
-            {selectedFiles.length === 0
-              ? '선택한 파일 없음'
-              : selectedFiles.map((file) => file.name).join(', ')}
-          </span>
-          <button type="submit" className="button button-primary button-small" disabled={isUploading || selectedFiles.length === 0}>
-            {isUploading ? '업로드 중...' : '업로드'}
-          </button>
+          <div
+            className={`attachment-dropzone${isDragOver ? ' is-drag-over' : ''}${isUploading ? ' is-disabled' : ''}`}
+            onDragEnter={handleDragOver}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            aria-label="첨부할 파일을 끌어 놓거나 파일 선택 버튼을 사용하세요"
+          >
+            <span className="attachment-dropzone-icon" aria-hidden="true">↥</span>
+            <div className="attachment-dropzone-copy">
+              <strong>파일을 여기에 끌어 놓으세요</strong>
+              <span>또는 파일 선택 버튼을 사용하세요 · 파일당 최대 10MB</span>
+            </div>
+            <input
+              id="post-attachments"
+              className="attachment-file-input"
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              disabled={isUploading}
+              aria-label="첨부파일 선택"
+            />
+            <label className="attachment-file-label" htmlFor="post-attachments">
+              <span aria-hidden="true">＋</span> 파일 선택
+            </label>
+          </div>
+
+          {selectedFiles.length > 0 && (
+            <div className="attachment-queue">
+              <div className="attachment-queue-heading">
+                <strong>업로드 대기 파일 <span>{selectedFiles.length}</span></strong>
+                <span>합계 {formatBytes(selectedTotalSize)}</span>
+              </div>
+              <ul className="attachment-selected-list" aria-label="업로드 대기 파일 목록">
+                {selectedFiles.map((file) => (
+                  <li key={fileKey(file)} className="attachment-selected-item">
+                    <span className="attachment-selected-icon" aria-hidden="true">▤</span>
+                    <span className="attachment-selected-name" title={file.name}>{file.name}</span>
+                    <span className="attachment-selected-size">{formatBytes(file.size)}</span>
+                    <button
+                      type="button"
+                      className="attachment-remove-selected"
+                      onClick={() => removeSelectedFile(fileKey(file))}
+                      disabled={isUploading}
+                      aria-label={`${file.name} 선택 취소`}
+                    >
+                      제거
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="attachment-upload-actions">
+            <span className="attachment-upload-help">
+              {selectedFiles.length === 0 ? '선택한 파일 없음' : '실패한 파일은 다시 업로드할 수 있도록 목록에 남습니다.'}
+            </span>
+            <button type="submit" className="button button-primary button-small" disabled={isUploading || selectedFiles.length === 0}>
+              {isUploading ? '업로드 중...' : `업로드${selectedFiles.length ? ` (${selectedFiles.length})` : ''}`}
+            </button>
+          </div>
         </form>
       )}
 

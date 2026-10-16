@@ -1741,3 +1741,234 @@ button:disabled,
     min-width: 76px;
   }
 }
+
+/* 첨부파일 업로드 UX 개선 CSS */
+
+.attachment-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.attachment-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  padding: 16px;
+  border: 1.5px dashed #d9d4ef;
+  border-radius: 14px;
+  background: #fcfbff;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.attachment-dropzone.is-drag-over {
+  border-color: var(--purple, #6655df);
+  background: #f1eeff;
+  box-shadow: inset 0 0 0 1px rgba(101, 86, 217, .08);
+}
+
+.attachment-dropzone.is-disabled {
+  opacity: .65;
+  pointer-events: none;
+}
+
+.attachment-dropzone-icon {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  color: #6555d5;
+  background: #eeebff;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.attachment-dropzone-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.attachment-dropzone-copy strong {
+  color: var(--ink, #29263f);
+  font-size: 12px;
+}
+
+.attachment-dropzone-copy > span {
+  color: #8b879e;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.attachment-file-input:focus-visible + .attachment-file-label {
+  outline: 3px solid rgba(101, 86, 217, .3);
+  outline-offset: 3px;
+}
+
+.attachment-queue {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #eeebf7;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.attachment-queue-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+  margin-bottom: 10px;
+  color: #8b879e;
+  font-size: 10px;
+}
+
+.attachment-queue-heading strong {
+  color: var(--ink, #29263f);
+  font-size: 11px;
+}
+
+.attachment-queue-heading strong span {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #6555d5;
+  background: #efedff;
+  font-size: 10px;
+}
+
+.attachment-selected-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attachment-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: #faf9fe;
+}
+
+.attachment-selected-icon {
+  flex: 0 0 auto;
+  color: #786ccf;
+  font-size: 14px;
+}
+
+.attachment-selected-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: #48445d;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-selected-size {
+  flex: 0 0 auto;
+  color: #9691a8;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.attachment-remove-selected {
+  flex: 0 0 auto;
+  min-height: 27px;
+  padding: 0 8px;
+  border: 1px solid #e9e4f1;
+  border-radius: 7px;
+  color: #77718f;
+  background: #fff;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.attachment-remove-selected:hover:not(:disabled) {
+  border-color: #efc6cc;
+  color: #a43c4b;
+  background: #fff7f8;
+}
+
+.attachment-remove-selected:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.attachment-upload-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.attachment-upload-help {
+  min-width: 0;
+  color: #8f8aa2;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.attachment-upload-actions .button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .attachment-dropzone {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .attachment-dropzone .attachment-file-label {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .attachment-selected-item {
+    flex-wrap: wrap;
+  }
+
+  .attachment-selected-name {
+    flex-basis: calc(100% - 75px);
+  }
+
+  .attachment-selected-size {
+    margin-left: 23px;
+  }
+
+  .attachment-upload-actions {
+    align-items: stretch;
+  }
+
+  .attachment-upload-actions .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attachment-dropzone {
+    transition: none;
+  }
+}
