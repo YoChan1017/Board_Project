@@ -1,10 +1,10 @@
-
 package com.example.board.repository;
 
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,6 +35,38 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             """)
     Page<Post> searchActivePostsByBoardIdAndKeyword(
             @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /** Search only active posts authored by one authenticated username. */
+    @Query(
+        value = """
+                SELECT p
+                FROM Post p
+                WHERE p.user.username = :username
+                  AND p.deletedAt IS NULL
+                  AND (
+                    :keyword IS NULL OR :keyword = ''
+                    OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  )
+                """,
+        countQuery = """
+                SELECT COUNT(p)
+                FROM Post p
+                WHERE p.user.username = :username
+                  AND p.deletedAt IS NULL
+                  AND (
+                    :keyword IS NULL OR :keyword = ''
+                    OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  )
+                """
+    )
+    @EntityGraph(attributePaths = {"user", "board", "category"})
+    Page<Post> findMyActivePostsByUsername(
+            @Param("username") String username,
             @Param("keyword") String keyword,
             Pageable pageable
     );

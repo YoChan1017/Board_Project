@@ -51,6 +51,20 @@ export const boardApi = {
     return response.data
   },
 
+  async getMyPosts({ page = 0, size = 10, keyword = '' } = {}) {
+    const response = await apiClient.get('/me/posts', {
+      params: { page, size, ...(keyword.trim() ? { keyword: keyword.trim() } : {}) },
+    })
+    return response.data
+  },
+
+  async getMyComments({ page = 0, size = 10, keyword = '' } = {}) {
+    const response = await apiClient.get('/me/comments', {
+      params: { page, size, ...(keyword.trim() ? { keyword: keyword.trim() } : {}) },
+    })
+    return response.data
+  },
+
   async getPost(postId) {
     const response = await apiClient.get(`/posts/${postId}`)
     return response.data
