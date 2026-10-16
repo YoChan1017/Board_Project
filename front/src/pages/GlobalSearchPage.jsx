@@ -22,6 +22,11 @@ function getTimestamp(value) {
   return Number.isNaN(timestamp) ? 0 : timestamp
 }
 
+function getCategoryKey(post) {
+  if (post.categoryId !== null && post.categoryId !== undefined) return String(post.categoryId)
+  return post.categoryName ? `name:${post.categoryName}` : ''
+}
+
 export default function GlobalSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const queryFromUrl = (searchParams.get('q') ?? '').trim()
@@ -30,6 +35,7 @@ export default function GlobalSearchPage() {
   const [boardsError, setBoardsError] = useState('')
   const [keywordInput, setKeywordInput] = useState(queryFromUrl)
   const [selectedBoardId, setSelectedBoardId] = useState('all')
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState('all')
   const [sortBy, setSortBy] = useState('latest')
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [page, setPage] = useState(0)
@@ -62,6 +68,7 @@ export default function GlobalSearchPage() {
   useEffect(() => {
     setKeywordInput(queryFromUrl)
     setInputError('')
+    setSelectedCategoryKey('all')
     setPage(0)
   }, [queryFromUrl])
 
@@ -137,16 +144,33 @@ export default function GlobalSearchPage() {
     return () => { cancelled = true }
   }, [queryFromUrl, selectedBoardId, boards, isLoadingBoards, boardsError, searchVersion])
 
+  const categoryOptions = useMemo(() => {
+    const byKey = new Map()
+    results.forEach((post) => {
+      if (!post.categoryName) return
+      const key = getCategoryKey(post)
+      if (!key || byKey.has(key)) return
+      byKey.set(key, { key, name: post.categoryName })
+    })
+    return [...byKey.values()].sort((a, b) => TITLE_COLLATOR.compare(a.name, b.name))
+  }, [results])
+
+  const categoryFilteredResults = useMemo(() => {
+    if (selectedCategoryKey === 'all') return results
+    return results.filter((post) => getCategoryKey(post) === selectedCategoryKey)
+  }, [results, selectedCategoryKey])
+
   const sortedResults = useMemo(() => {
-    const items = [...results]
+    const items = [...categoryFilteredResults]
     if (sortBy === 'title') return items.sort((a, b) => TITLE_COLLATOR.compare(a.title ?? '', b.title ?? ''))
     if (sortBy === 'views') return items.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
     if (sortBy === 'likes') return items.sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0))
     return items.sort((a, b) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt))
-  }, [results, sortBy])
+  }, [categoryFilteredResults, sortBy])
 
   const totalPages = Math.max(1, Math.ceil(sortedResults.length / pageSize))
   const visibleResults = sortedResults.slice(page * pageSize, (page + 1) * pageSize)
+  const isCategoryFilterActive = selectedCategoryKey !== 'all'
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -166,8 +190,14 @@ export default function GlobalSearchPage() {
   function clearSearch() {
     setKeywordInput('')
     setInputError('')
+    setSelectedCategoryKey('all')
     setPage(0)
     setSearchParams({})
+  }
+
+  function resetFilters() {
+    setSelectedCategoryKey('all')
+    setPage(0)
   }
 
   return (
@@ -201,9 +231,21 @@ export default function GlobalSearchPage() {
         <div className="global-search-filters">
           <div className="global-search-filter">
             <label htmlFor="global-search-board">검색 범위</label>
-            <select id="global-search-board" value={selectedBoardId} onChange={(event) => { setSelectedBoardId(event.target.value); setPage(0) }} disabled={isLoadingBoards || boards.length === 0}>
+            <select id="global-search-board" value={selectedBoardId} onChange={(event) => { setSelectedBoardId(event.target.value); setSelectedCategoryKey('all'); setPage(0) }} disabled={isLoadingBoards || boards.length === 0}>
               <option value="all">전체 게시판</option>
               {boards.map((board) => <option key={board.id} value={String(board.id)}>{board.name}</option>)}
+            </select>
+          </div>
+          <div className="global-search-filter">
+            <label htmlFor="global-search-category">카테고리</label>
+            <select
+              id="global-search-category"
+              value={selectedCategoryKey}
+              onChange={(event) => { setSelectedCategoryKey(event.target.value); setPage(0) }}
+              disabled={!queryFromUrl || isSearching || categoryOptions.length === 0}
+            >
+              <option value="all">전체 카테고리</option>
+              {categoryOptions.map((category) => <option key={category.key} value={category.key}>{category.name}</option>)}
             </select>
           </div>
           <div className="global-search-filter">
@@ -224,6 +266,12 @@ export default function GlobalSearchPage() {
             </select>
           </div>
         </div>
+        {isCategoryFilterActive && (
+          <div className="global-search-filter-summary">
+            <span>카테고리 필터가 적용되었습니다.</span>
+            <button type="button" className="text-link" onClick={resetFilters}>필터 초기화</button>
+          </div>
+        )}
       </section>
 
       {boardsError && <ErrorMessage className="global-search-error" actionLabel="게시판 다시 불러오기" onAction={loadBoards}>{boardsError}</ErrorMessage>}
@@ -237,17 +285,29 @@ export default function GlobalSearchPage() {
             <div>
               <span className="panel-kicker">SEARCH RESULTS</span>
               <h2 id="global-search-results-title">“{queryFromUrl}” 검색 결과</h2>
-              <p>{selectedBoardId === 'all' ? '전체 게시판' : boards.find((board) => String(board.id) === selectedBoardId)?.name || '선택한 게시판'}에서 {results.length.toLocaleString('ko-KR')}개를 찾았습니다.</p>
+              <p>
+                {selectedBoardId === 'all' ? '전체 게시판' : boards.find((board) => String(board.id) === selectedBoardId)?.name || '선택한 게시판'}에서{' '}
+                {isCategoryFilterActive ? `${results.length.toLocaleString('ko-KR')}개 중 카테고리 조건에 맞는 ${sortedResults.length.toLocaleString('ko-KR')}개` : `${results.length.toLocaleString('ko-KR')}개`}를 찾았습니다.
+              </p>
             </div>
-            <span className="global-search-result-count">{results.length.toLocaleString('ko-KR')}개</span>
+            <span className="global-search-result-count">{sortedResults.length.toLocaleString('ko-KR')}개</span>
           </div>
 
           {failedBoardCount > 0 && <p className="global-search-warning" role="status">{failedBoardCount}개 게시판에서 검색하지 못했습니다. 표시된 결과는 일부 게시판을 제외할 수 있습니다.</p>}
           {truncatedBoardCount > 0 && <p className="global-search-warning" role="status">{truncatedBoardCount}개 게시판에서 검색 결과가 100개를 초과했습니다. 해당 게시판의 추가 결과는 표시되지 않을 수 있습니다.</p>}
 
-          {results.length === 0 ? (
-            <EmptyState className="global-search-empty" icon="⌕" title="검색 결과가 없습니다." description="검색어를 바꾸거나 전체 게시판을 선택해 다시 검색해 보세요.">
-              <button type="button" className="button button-secondary button-small" onClick={() => { setKeywordInput(''); setSearchParams({}) }}>검색어 지우기</button>
+          {sortedResults.length === 0 ? (
+            <EmptyState
+              className="global-search-empty"
+              icon="⌕"
+              title={results.length > 0 ? '현재 필터 조건에 맞는 결과가 없습니다.' : '검색 결과가 없습니다.'}
+              description={results.length > 0 ? '다른 카테고리를 선택하거나 필터를 초기화해 보세요.' : '검색어를 바꾸거나 전체 게시판을 선택해 다시 검색해 보세요.'}
+            >
+              {results.length > 0 ? (
+                <button type="button" className="button button-secondary button-small" onClick={resetFilters}>필터 초기화</button>
+              ) : (
+                <button type="button" className="button button-secondary button-small" onClick={() => { setKeywordInput(''); setSearchParams({}) }}>검색어 지우기</button>
+              )}
             </EmptyState>
           ) : (
             <>

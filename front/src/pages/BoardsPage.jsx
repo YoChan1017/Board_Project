@@ -4,6 +4,7 @@ import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { ErrorMessage, LoadingState } from '../components/FeedbackState'
 
+const CATEGORY_FILTER_PAGE_SIZE = 100
 const TITLE_COLLATOR = new Intl.Collator('ko-KR', { numeric: true, sensitivity: 'base' })
 
 function formatDate(value) {
@@ -19,6 +20,7 @@ export default function BoardsPage() {
   const [boards, setBoards] = useState([])
   const [selectedBoardId, setSelectedBoardId] = useState('')
   const [categories, setCategories] = useState([])
+  const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [postsPage, setPostsPage] = useState(null)
   const [keywordInput, setKeywordInput] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -30,6 +32,11 @@ export default function BoardsPage() {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false)
   const [boardsError, setBoardsError] = useState('')
   const [postsError, setPostsError] = useState('')
+
+  // When filtering by category, fetch up to the API's maximum page size and paginate
+  // the filtered subset locally. With no category filter, keep backend pagination.
+  const requestPage = selectedCategoryId === 'all' ? page : 0
+  const requestSize = selectedCategoryId === 'all' ? pageSize : CATEGORY_FILTER_PAGE_SIZE
 
   const loadBoards = useCallback(async () => {
     setIsLoadingBoards(true)
@@ -66,7 +73,7 @@ export default function BoardsPage() {
       try {
         const [categoryData, postData] = await Promise.all([
           boardApi.getCategories(selectedBoardId),
-          boardApi.getPosts(selectedBoardId, { page, size: pageSize, keyword }),
+          boardApi.getPosts(selectedBoardId, { page: requestPage, size: requestSize, keyword }),
         ])
         if (!cancelled) {
           setCategories(Array.isArray(categoryData) ? categoryData : [])
@@ -83,7 +90,7 @@ export default function BoardsPage() {
 
     loadBoardContent()
     return () => { cancelled = true }
-  }, [selectedBoardId, page, pageSize, keyword, contentReloadKey])
+  }, [selectedBoardId, requestPage, requestSize, keyword, contentReloadKey])
 
   const handleSearch = (event) => {
     event.preventDefault()
@@ -101,25 +108,42 @@ export default function BoardsPage() {
 
   const handleBoardSelect = (boardId) => {
     setSelectedBoardId(String(boardId))
+    setSelectedCategoryId('all')
     setPage(0)
     setKeyword('')
     setKeywordInput('')
     setPostsError('')
   }
 
-  const postItems = postsPage?.content ?? []
+  const rawPostItems = postsPage?.content ?? []
+  const categoryFilteredPostItems = useMemo(() => {
+    if (selectedCategoryId === 'all') return rawPostItems
+    return rawPostItems.filter((post) => String(post.categoryId ?? '') === selectedCategoryId)
+  }, [rawPostItems, selectedCategoryId])
+
   const sortedPostItems = useMemo(() => {
-    const items = [...postItems]
+    const items = [...categoryFilteredPostItems]
     if (sortBy === 'title') return items.sort((a, b) => TITLE_COLLATOR.compare(a.title ?? '', b.title ?? ''))
     if (sortBy === 'views') return items.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
     if (sortBy === 'likes') return items.sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0))
     // The API's default order is newest first; keep it unchanged for this option.
     return items
-  }, [postItems, sortBy])
+  }, [categoryFilteredPostItems, sortBy])
 
-  const totalPages = postsPage?.totalPages ?? 0
-  const totalElements = postsPage?.totalElements ?? 0
+  const isCategoryFilterActive = selectedCategoryId !== 'all'
+  const categoryFilterHasMoreResults = isCategoryFilterActive
+    && Number(postsPage?.totalElements ?? 0) > rawPostItems.length
+  const totalPages = isCategoryFilterActive
+    ? Math.ceil(sortedPostItems.length / pageSize)
+    : (postsPage?.totalPages ?? 0)
+  const totalElements = isCategoryFilterActive
+    ? sortedPostItems.length
+    : (postsPage?.totalElements ?? 0)
+  const visiblePostItems = isCategoryFilterActive
+    ? sortedPostItems.slice(page * pageSize, (page + 1) * pageSize)
+    : sortedPostItems
   const selectedBoard = boards.find((board) => String(board.id) === selectedBoardId)
+  const selectedCategory = categories.find((category) => String(category.id) === selectedCategoryId)
 
   return (
     <main className="boards-page">
@@ -203,6 +227,18 @@ export default function BoardsPage() {
 
             <div className="board-explorer-controls" aria-label="게시글 표시 옵션">
               <div className="board-explorer-control">
+                <label htmlFor="post-category-filter">카테고리</label>
+                <select
+                  id="post-category-filter"
+                  value={selectedCategoryId}
+                  onChange={(event) => { setSelectedCategoryId(event.target.value); setPage(0) }}
+                  disabled={isLoadingPosts || categories.length === 0}
+                >
+                  <option value="all">전체 카테고리</option>
+                  {categories.map((category) => <option key={category.id} value={String(category.id)}>{category.name}</option>)}
+                </select>
+              </div>
+              <div className="board-explorer-control">
                 <label htmlFor="post-page-size">페이지당 게시글</label>
                 <select
                   id="post-page-size"
@@ -216,20 +252,31 @@ export default function BoardsPage() {
                 </select>
               </div>
               <div className="board-explorer-control">
-                <label htmlFor="post-sort-order">현재 페이지 정렬</label>
-                <select id="post-sort-order" value={sortBy} onChange={(event) => setSortBy(event.target.value)} disabled={isLoadingPosts}>
+                <label htmlFor="post-sort-order">정렬</label>
+                <select id="post-sort-order" value={sortBy} onChange={(event) => { setSortBy(event.target.value); setPage(0) }} disabled={isLoadingPosts}>
                   <option value="latest">최신순</option>
                   <option value="title">제목 가나다순</option>
                   <option value="views">조회 많은 순</option>
                   <option value="likes">좋아요 많은 순</option>
                 </select>
               </div>
-              <p>정렬은 현재 불러온 페이지 안에서만 적용됩니다.</p>
+              <p>{isCategoryFilterActive ? '카테고리 선택 시 조회된 최대 100개 결과에서 필터링합니다.' : '정렬은 현재 불러온 페이지 안에서만 적용됩니다.'}</p>
             </div>
 
             {keyword && (
               <p className="board-search-summary" aria-live="polite">
                 <span>검색어</span> “{keyword}” · {totalElements.toLocaleString('ko-KR')}개 결과
+                {selectedCategory && <> · 카테고리: {selectedCategory.name}</>}
+              </p>
+            )}
+            {isCategoryFilterActive && !keyword && (
+              <p className="board-search-summary" aria-live="polite">
+                <span>카테고리</span> {selectedCategory?.name || '선택한 카테고리'} · {totalElements.toLocaleString('ko-KR')}개 결과
+              </p>
+            )}
+            {categoryFilterHasMoreResults && !postsError && (
+              <p className="category-filter-notice" role="status">
+                게시판 검색 API의 페이지 크기 제한 때문에 최근 조회 결과 최대 100개만 필터링했습니다. 정확한 전체 카테고리 검색에는 백엔드 카테고리 필터 API가 필요합니다.
               </p>
             )}
 
@@ -245,12 +292,13 @@ export default function BoardsPage() {
 
             {isLoadingPosts ? (
               <LoadingState className="boards-state">게시글을 불러오는 중입니다...</LoadingState>
-            ) : postsError ? null : sortedPostItems.length === 0 ? (
+            ) : postsError ? null : visiblePostItems.length === 0 ? (
               <div className="posts-empty">
                 <span className="posts-empty-icon" aria-hidden="true">✎</span>
-                <h3>{keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.'}</h3>
-                <p>{keyword ? '검색어를 변경하거나 초기화해 보세요.' : '첫 게시글을 작성해 보세요.'}</p>
-                {!keyword && selectedBoardId && <Link to={`/boards/${selectedBoardId}/posts/new`} className="text-link">첫 글 작성하기 →</Link>}
+                <h3>{isCategoryFilterActive ? '선택한 조건에 맞는 게시글이 없습니다.' : keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.'}</h3>
+                <p>{isCategoryFilterActive ? '다른 카테고리를 선택하거나 필터를 초기화해 보세요.' : keyword ? '검색어를 변경하거나 초기화해 보세요.' : '첫 게시글을 작성해 보세요.'}</p>
+                {isCategoryFilterActive && <button type="button" className="button button-secondary button-small" onClick={() => { setSelectedCategoryId('all'); setPage(0) }}>카테고리 필터 초기화</button>}
+                {!keyword && !isCategoryFilterActive && selectedBoardId && <Link to={`/boards/${selectedBoardId}/posts/new`} className="text-link">첫 글 작성하기 →</Link>}
               </div>
             ) : (
               <>
@@ -258,7 +306,7 @@ export default function BoardsPage() {
                   <table className="post-table">
                     <thead><tr><th scope="col">제목</th><th scope="col">작성자</th><th scope="col">조회</th><th scope="col">좋아요</th><th scope="col">작성일</th></tr></thead>
                     <tbody>
-                      {sortedPostItems.map((post) => (
+                      {visiblePostItems.map((post) => (
                         <tr key={post.id}>
                           <td><div className="post-title-cell">{post.categoryName && <span className="category-inline">{post.categoryName}</span>}<Link to={`/posts/${post.id}`} className="post-title-link">{post.title}</Link></div></td>
                           <td>{post.authorNickname || '-'}</td>
