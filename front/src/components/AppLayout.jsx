@@ -16,7 +16,6 @@ export default function AppLayout() {
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  // Close the compact navigation after route changes, including browser navigation.
   useEffect(() => {
     setIsMenuOpen(false)
   }, [location.pathname])
@@ -36,7 +35,6 @@ export default function AppLayout() {
           <span className="brand-mark" aria-hidden="true">B</span>
           <span>Board<span className="brand-light">Project</span></span>
         </Link>
-
         <button
           type="button"
           className="mobile-nav-toggle"
@@ -45,18 +43,16 @@ export default function AppLayout() {
           aria-label={isMenuOpen ? '주요 메뉴 닫기' : '주요 메뉴 열기'}
           onClick={() => setIsMenuOpen((open) => !open)}
         >
-          <span className={`mobile-nav-icon${isMenuOpen ? ' is-open' : ''}`} aria-hidden="true">
-            <span /><span /><span />
-          </span>
+          <span className={`mobile-nav-icon${isMenuOpen ? ' is-open' : ''}`} aria-hidden="true"><span /><span /><span /></span>
           <span className="mobile-nav-toggle-label">{isMenuOpen ? '닫기' : '메뉴'}</span>
         </button>
-
         <nav id="primary-navigation" className={`site-nav${isMenuOpen ? ' mobile-open' : ''}`} aria-label="주요 메뉴">
           <NavLink to="/" end className={navLinkClass} onClick={closeMenu}>홈</NavLink>
           {user ? (
             <>
               <NavLink to="/dashboard" className={navLinkClass} onClick={closeMenu}>대시보드</NavLink>
               <NavLink to="/activity" className={navLinkClass} onClick={closeMenu}>내 활동</NavLink>
+              <NavLink to="/search" className={navLinkClass} onClick={closeMenu}>통합 검색</NavLink>
               <NavLink to="/boards" className={navLinkClass} onClick={closeMenu}>게시판</NavLink>
               {isAdmin(user) && <NavLink to="/admin/boards" className={navLinkClass} onClick={closeMenu}>게시판 관리</NavLink>}
               {isAdmin(user) && <NavLink to="/admin/posts" className={navLinkClass} onClick={closeMenu}>글 관리</NavLink>}
@@ -71,9 +67,7 @@ export default function AppLayout() {
           )}
         </nav>
       </header>
-
       <Outlet />
-
       <footer className="site-footer">
         <span>Board Project</span>
         <span>Spring Boot · React · MariaDB</span>

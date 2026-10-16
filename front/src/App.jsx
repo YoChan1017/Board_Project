@@ -7,6 +7,7 @@ import AdminBoardManagementPage from './pages/AdminBoardManagementPage'
 import AdminPostManagementPage from './pages/AdminPostManagementPage'
 import BoardsPage from './pages/BoardsPage'
 import DashboardPage from './pages/DashboardPage'
+import GlobalSearchPage from './pages/GlobalSearchPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import MyActivityPage from './pages/MyActivityPage'
@@ -44,6 +45,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/activity" element={<MyActivityPage />} />
+          <Route path="/search" element={<GlobalSearchPage />} />
           <Route path="/boards" element={<BoardsPage />} />
           <Route path="/boards/:boardId/posts/new" element={<PostCreatePage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
