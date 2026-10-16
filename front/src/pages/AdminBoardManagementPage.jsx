@@ -6,10 +6,16 @@ import { getErrorMessage } from '../api/client'
 const EMPTY_BOARD = { name: '', description: '' }
 const EMPTY_CATEGORY = { name: '' }
 
+function normalizeText(value) {
+  return String(value ?? '').trim().toLocaleLowerCase('ko-KR')
+}
+
 export default function AdminBoardManagementPage() {
   const [boards, setBoards] = useState([])
   const [selectedBoardId, setSelectedBoardId] = useState('')
   const [categories, setCategories] = useState([])
+  const [boardQuery, setBoardQuery] = useState('')
+  const [categoryQuery, setCategoryQuery] = useState('')
   const [boardFormMode, setBoardFormMode] = useState(null)
   const [editingBoardId, setEditingBoardId] = useState(null)
   const [boardDraft, setBoardDraft] = useState(EMPTY_BOARD)
@@ -28,6 +34,18 @@ export default function AdminBoardManagementPage() {
     () => boards.find((board) => String(board.id) === String(selectedBoardId)) ?? null,
     [boards, selectedBoardId],
   )
+
+  const filteredBoards = useMemo(() => {
+    const query = normalizeText(boardQuery)
+    if (!query) return boards
+    return boards.filter((board) => [board.name, board.description].some((value) => normalizeText(value).includes(query)))
+  }, [boards, boardQuery])
+
+  const filteredCategories = useMemo(() => {
+    const query = normalizeText(categoryQuery)
+    if (!query) return categories
+    return categories.filter((category) => normalizeText(category.name).includes(query))
+  }, [categories, categoryQuery])
 
   const loadBoards = useCallback(async (preferredBoardId) => {
     setIsLoadingBoards(true)
@@ -61,6 +79,7 @@ export default function AdminBoardManagementPage() {
     try {
       const result = await boardApi.getCategories(boardId)
       setCategories(Array.isArray(result) ? result : [])
+      setCategoryQuery('')
     } catch (requestError) {
       setCategories([])
       setError(getErrorMessage(requestError, '카테고리 목록을 불러오지 못했습니다.'))
@@ -74,8 +93,32 @@ export default function AdminBoardManagementPage() {
   }, [loadBoards])
 
   useEffect(() => {
-    loadCategories(selectedBoardId)
-  }, [selectedBoardId, loadCategories])
+    let cancelled = false
+    async function loadSelectedBoardCategories() {
+      if (!selectedBoardId) {
+        setCategories([])
+        setIsLoadingCategories(false)
+        return
+      }
+      setIsLoadingCategories(true)
+      try {
+        const result = await boardApi.getCategories(selectedBoardId)
+        if (!cancelled) {
+          setCategories(Array.isArray(result) ? result : [])
+          setCategoryQuery('')
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setCategories([])
+          setError(getErrorMessage(requestError, '카테고리 목록을 불러오지 못했습니다.'))
+        }
+      } finally {
+        if (!cancelled) setIsLoadingCategories(false)
+      }
+    }
+    loadSelectedBoardCategories()
+    return () => { cancelled = true }
+  }, [selectedBoardId])
 
   function beginCreateBoard() {
     setError('')
@@ -243,27 +286,35 @@ export default function AdminBoardManagementPage() {
         <p>게시판과 각 게시판의 카테고리를 생성·수정·삭제합니다.</p>
       </section>
 
-      {error && <div className="boards-alert admin-feedback" role="alert"><span>{error}</span></div>}
-      {notice && <div className="admin-notice" role="status"><span aria-hidden="true">✓</span>{notice}</div>}
+      {error && <div className="boards-alert admin-feedback" role="alert"><span>{error}</span><button type="button" className="admin-inline-dismiss" onClick={() => setError('')} aria-label="오류 메시지 닫기">×</button></div>}
+      {notice && <div className="admin-notice" role="status"><span aria-hidden="true">✓</span>{notice}<button type="button" className="admin-inline-dismiss" onClick={() => setNotice('')} aria-label="성공 메시지 닫기">×</button></div>}
 
       <div className="admin-management-grid">
         <section className="admin-panel" aria-labelledby="admin-board-list-heading">
           <div className="admin-panel-heading">
             <div>
               <span className="panel-kicker">BOARD SETTINGS</span>
-              <h2 id="admin-board-list-heading">게시판 목록 <span className="admin-count">{boards.length}</span></h2>
+              <h2 id="admin-board-list-heading">게시판 목록 <span className="admin-count">{boardQuery.trim() ? `${filteredBoards.length}/${boards.length}` : boards.length}</span></h2>
             </div>
             <button type="button" className="button button-primary button-small" onClick={beginCreateBoard}>+ 게시판 추가</button>
           </div>
 
+          <div className="admin-list-search">
+            <label htmlFor="admin-board-filter">게시판 검색</label>
+            <div className="admin-list-search-row">
+              <input id="admin-board-filter" type="search" value={boardQuery} onChange={(event) => setBoardQuery(event.target.value)} placeholder="이름 또는 설명으로 검색" />
+              {boardQuery && <button type="button" className="button button-secondary button-small" onClick={() => setBoardQuery('')}>초기화</button>}
+            </div>
+          </div>
+
           {boardFormMode && (
-            <form className="admin-edit-form" onSubmit={handleBoardSubmit}>
+            <form className="admin-edit-form" onSubmit={handleBoardSubmit} aria-busy={isSavingBoard}>
               <h3>{boardFormMode === 'edit' ? '게시판 수정' : '새 게시판'}</h3>
               <label htmlFor="admin-board-name">게시판 이름</label>
-              <input id="admin-board-name" value={boardDraft.name} maxLength={100} onChange={(event) => setBoardDraft((current) => ({ ...current, name: event.target.value }))} placeholder="예: 자유게시판" required />
+              <input id="admin-board-name" value={boardDraft.name} maxLength={100} onChange={(event) => setBoardDraft((current) => ({ ...current, name: event.target.value }))} placeholder="예: 자유게시판" required disabled={isSavingBoard} />
               <div className="admin-input-hint">{boardDraft.name.length} / 100자</div>
               <label htmlFor="admin-board-description">설명 <span className="form-optional">선택</span></label>
-              <textarea id="admin-board-description" value={boardDraft.description} maxLength={255} rows={3} onChange={(event) => setBoardDraft((current) => ({ ...current, description: event.target.value }))} placeholder="게시판에 대한 짧은 설명" />
+              <textarea id="admin-board-description" value={boardDraft.description} maxLength={255} rows={3} onChange={(event) => setBoardDraft((current) => ({ ...current, description: event.target.value }))} placeholder="게시판에 대한 짧은 설명" disabled={isSavingBoard} />
               <div className="admin-input-hint">{boardDraft.description.length} / 255자</div>
               <div className="admin-form-actions">
                 <button type="button" className="button button-secondary button-small" onClick={cancelBoardForm} disabled={isSavingBoard}>취소</button>
@@ -276,12 +327,14 @@ export default function AdminBoardManagementPage() {
             <div className="boards-state" role="status">게시판 목록을 불러오는 중입니다...</div>
           ) : boards.length === 0 ? (
             <div className="admin-empty-state"><span aria-hidden="true">▤</span><strong>등록된 게시판이 없습니다.</strong><p>‘게시판 추가’를 눌러 첫 게시판을 만들어 주세요.</p></div>
+          ) : filteredBoards.length === 0 ? (
+            <div className="admin-empty-state"><span aria-hidden="true">⌕</span><strong>일치하는 게시판이 없습니다.</strong><p>검색어를 바꾸거나 초기화해 보세요.</p><button type="button" className="button button-secondary button-small" onClick={() => setBoardQuery('')}>검색 초기화</button></div>
           ) : (
             <div className="admin-board-list">
-              {boards.map((board) => (
+              {filteredBoards.map((board) => (
                 <article className={`admin-board-item${String(board.id) === String(selectedBoardId) ? ' selected' : ''}`} key={board.id}>
                   <button type="button" className="admin-board-select" onClick={() => { setSelectedBoardId(String(board.id)); cancelCategoryForm(); setError(''); setNotice('') }} aria-pressed={String(board.id) === String(selectedBoardId)}>
-                    <span className="admin-board-icon">B</span>
+                    <span className="admin-board-icon" aria-hidden="true">B</span>
                     <span className="admin-board-copy"><strong>{board.name}</strong><small>{board.description || '설명이 없습니다.'}</small></span>
                     <span className="admin-board-chevron" aria-hidden="true">›</span>
                   </button>
@@ -293,6 +346,7 @@ export default function AdminBoardManagementPage() {
               ))}
             </div>
           )}
+          {selectedBoard && !filteredBoards.some((board) => String(board.id) === String(selectedBoardId)) && boardQuery.trim() && <p className="admin-filter-context">현재 카테고리 관리는 “{selectedBoard.name}” 게시판을 대상으로 합니다. 검색 결과에 선택한 게시판은 표시되지 않습니다.</p>}
           <div className="admin-panel-footer"><Link to="/boards" className="text-link">일반 게시판 보기 →</Link></div>
         </section>
 
@@ -300,17 +354,27 @@ export default function AdminBoardManagementPage() {
           <div className="admin-panel-heading">
             <div>
               <span className="panel-kicker">CATEGORY SETTINGS</span>
-              <h2 id="admin-category-heading">카테고리 관리</h2>
+              <h2 id="admin-category-heading">카테고리 관리 <span className="admin-count">{categoryQuery.trim() ? `${filteredCategories.length}/${categories.length}` : categories.length}</span></h2>
               <p className="admin-panel-subtitle">{selectedBoard ? `${selectedBoard.name} 게시판` : '게시판을 먼저 선택해 주세요.'}</p>
             </div>
-            <button type="button" className="button button-primary button-small" onClick={beginCreateCategory} disabled={!selectedBoard}>+ 카테고리 추가</button>
+            <button type="button" className="button button-primary button-small" onClick={beginCreateCategory} disabled={!selectedBoard || isSavingCategory}>+ 카테고리 추가</button>
           </div>
 
+          {selectedBoard && (
+            <div className="admin-list-search">
+              <label htmlFor="admin-category-filter">카테고리 검색</label>
+              <div className="admin-list-search-row">
+                <input id="admin-category-filter" type="search" value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="카테고리 이름으로 검색" disabled={isLoadingCategories} />
+                {categoryQuery && <button type="button" className="button button-secondary button-small" onClick={() => setCategoryQuery('')}>초기화</button>}
+              </div>
+            </div>
+          )}
+
           {categoryFormMode && selectedBoard && (
-            <form className="admin-edit-form" onSubmit={handleCategorySubmit}>
+            <form className="admin-edit-form" onSubmit={handleCategorySubmit} aria-busy={isSavingCategory}>
               <h3>{categoryFormMode === 'edit' ? '카테고리 수정' : '새 카테고리'}</h3>
               <label htmlFor="admin-category-name">카테고리 이름</label>
-              <input id="admin-category-name" value={categoryDraft.name} maxLength={100} onChange={(event) => setCategoryDraft({ name: event.target.value })} placeholder="예: 공지, 질문, 팁" required />
+              <input id="admin-category-name" value={categoryDraft.name} maxLength={100} onChange={(event) => setCategoryDraft({ name: event.target.value })} placeholder="예: 공지, 질문, 팁" required disabled={isSavingCategory} />
               <div className="admin-input-hint">{categoryDraft.name.length} / 100자</div>
               <div className="admin-form-actions">
                 <button type="button" className="button button-secondary button-small" onClick={cancelCategoryForm} disabled={isSavingCategory}>취소</button>
@@ -325,11 +389,13 @@ export default function AdminBoardManagementPage() {
             <div className="boards-state" role="status">카테고리를 불러오는 중입니다...</div>
           ) : categories.length === 0 ? (
             <div className="admin-empty-state"><span aria-hidden="true">◇</span><strong>등록된 카테고리가 없습니다.</strong><p>이 게시판에 필요한 카테고리를 추가해 주세요.</p></div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="admin-empty-state"><span aria-hidden="true">⌕</span><strong>일치하는 카테고리가 없습니다.</strong><p>다른 검색어를 입력하거나 필터를 초기화해 보세요.</p><button type="button" className="button button-secondary button-small" onClick={() => setCategoryQuery('')}>검색 초기화</button></div>
           ) : (
             <div className="admin-category-list">
-              {categories.map((category) => (
+              {filteredCategories.map((category) => (
                 <article className="admin-category-item" key={category.id}>
-                  <span className="admin-category-badge">#</span>
+                  <span className="admin-category-badge" aria-hidden="true">#</span>
                   <strong>{category.name}</strong>
                   <div className="admin-row-actions">
                     <button type="button" className="admin-text-action" onClick={() => beginEditCategory(category)}>수정</button>
