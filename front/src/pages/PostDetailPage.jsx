@@ -6,6 +6,7 @@ import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { LoadingState } from '../components/FeedbackState'
+import { recordRecentPost } from '../utils/recentPostHistory'
 
 function formatDate(value) {
   if (!value) return '-'
@@ -25,6 +26,8 @@ export default function PostDetailPage() {
   const { postId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const userId = user?.userId
+  const username = user?.username
   const [post, setPost] = useState(null)
   const [likeStatus, setLikeStatus] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -53,6 +56,19 @@ export default function PostDetailPage() {
     loadPost()
     return () => { cancelled = true }
   }, [postId])
+
+  // Save only lightweight metadata, scoped to the signed-in browser account.
+  useEffect(() => {
+    if (!post || (userId == null && !username)) return
+    recordRecentPost({
+      id: post.id,
+      title: post.title,
+      authorNickname: post.authorNickname,
+      boardId: post.boardId,
+      categoryName: post.categoryName,
+      createdAt: post.createdAt,
+    }, { userId, username })
+  }, [post?.id, post?.title, post?.authorNickname, post?.boardId, post?.categoryName, post?.createdAt, userId, username])
 
   useEffect(() => {
     let cancelled = false
