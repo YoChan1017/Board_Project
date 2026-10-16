@@ -1603,3 +1603,141 @@ button:disabled,
     padding: 14px;
   }
 }
+
+/* Frontend 13차 댓글 탐색 및 입력 편의 UI. */
+.comment-notice {
+  margin-bottom: 14px;
+}
+
+.comment-form-actions {
+  flex-wrap: wrap;
+}
+
+.comment-shortcut-hint {
+  margin-left: auto;
+  color: #9691a9;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.comment-browser {
+  margin: 18px 0 8px;
+  padding: 14px;
+  border: 1px solid #eeebf8;
+  border-radius: 13px;
+  background: #fcfbff;
+}
+
+.comment-search-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comment-search-form input {
+  flex: 1 1 220px;
+  min-width: 0;
+  min-height: 37px;
+  padding: 0 11px;
+  border: 1px solid #e3dfef;
+  border-radius: 9px;
+  color: var(--ink, #29263f);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
+.comment-search-form input:focus-visible {
+  outline: 3px solid rgba(101, 86, 217, .25);
+  outline-offset: 2px;
+}
+
+.comment-search-summary {
+  margin: 10px 0 0;
+  color: #77718f;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.comment-thread-summary {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 4px 0 10px;
+  color: #9691a7;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.comment-thread-summary > span:first-child {
+  color: #6c62b0;
+  font-weight: 750;
+}
+
+.comment-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding-top: 20px;
+  margin-top: 12px;
+  border-top: 1px solid #f0edf8;
+}
+
+.comment-pagination > span {
+  min-width: 90px;
+  color: #858197;
+  font-size: 11px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.comment-pagination button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.comment-filter-empty {
+  padding-bottom: 28px;
+}
+
+.comment-filter-empty .button {
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .comment-browser {
+    padding: 10px;
+  }
+
+  .comment-search-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .comment-search-form input {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .comment-search-form button {
+    min-width: 62px;
+  }
+
+  .comment-shortcut-hint {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .comment-pagination {
+    gap: 9px;
+  }
+
+  .comment-pagination > span {
+    min-width: 76px;
+  }
+}
