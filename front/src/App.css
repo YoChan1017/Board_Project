@@ -2457,3 +2457,71 @@ button:disabled,
     width: 100%;
   }
 }
+
+/* Frontend milestone 20 */
+.post-create-form input[aria-invalid="true"],
+.post-create-form textarea[aria-invalid="true"] {
+  border-color: #d96b7b;
+  background: #fffafb;
+}
+
+.post-create-form input[aria-invalid="true"]:focus,
+.post-create-form textarea[aria-invalid="true"]:focus {
+  border-color: #d96b7b;
+  box-shadow: 0 0 0 3px rgba(217, 107, 123, .13);
+}
+
+.post-field-error {
+  margin: -3px 0 3px;
+  color: #b53f52;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.post-content-field.has-field-error .post-content-help {
+  margin-bottom: 0;
+}
+
+.post-draft-notice {
+  margin: 0 0 8px;
+  padding: 11px 13px;
+  border: 1px solid #d7efe5;
+  border-radius: 11px;
+  color: #26745f;
+  background: #f1fbf7;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.post-draft-status {
+  margin: 0 0 16px;
+  color: #858197;
+  font-size: 10px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.post-create-form .post-form-actions > button:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .post-form-actions {
+    flex-wrap: wrap;
+  }
+
+  .post-form-actions > .button {
+    flex: 1 1 125px;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-create-form input,
+  .post-create-form textarea,
+  .post-create-form select {
+    transition: none;
+  }
+}

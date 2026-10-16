@@ -1,19 +1,34 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { ErrorMessage, LoadingState } from '../components/FeedbackState'
 import PostContentField from '../components/PostContentField'
+import { createPostDraftKey, readPostDraft, removePostDraft, savePostDraft } from '../utils/postDraftStorage'
 
 function isAdmin(user) {
   return ['ADMIN', 'ROLE_ADMIN'].includes(user?.role)
+}
+
+function validatePost(title, content) {
+  const errors = {}
+  if (!title.trim()) errors.title = '제목을 입력해 주세요.'
+  else if (title.trim().length > 200) errors.title = '제목은 200자 이하로 입력해 주세요.'
+  if (!content.trim()) errors.content = '내용을 입력해 주세요.'
+  return errors
 }
 
 export default function PostEditPage() {
   const { postId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const userIdentifier = user?.userId ?? user?.username
+  const draftKey = useMemo(
+    () => createPostDraftKey('edit', postId, userIdentifier),
+    [postId, userIdentifier],
+  )
+  const submitLock = useRef(false)
   const [post, setPost] = useState(null)
   const [categories, setCategories] = useState([])
   const [title, setTitle] = useState('')
@@ -22,8 +37,13 @@ export default function PostEditPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [accessDenied, setAccessDenied] = useState(false)
   const [loadVersion, setLoadVersion] = useState(0)
+  const [draftPersistenceReady, setDraftPersistenceReady] = useState(false)
+  const [draftLoadedForKey, setDraftLoadedForKey] = useState('')
+  const [draftRestored, setDraftRestored] = useState(false)
+  const [draftStorageStatus, setDraftStorageStatus] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -33,7 +53,12 @@ export default function PostEditPage() {
       setError('')
       setPost(null)
       setCategories([])
+      setFieldErrors({})
       setAccessDenied(false)
+      setDraftPersistenceReady(false)
+      setDraftLoadedForKey('')
+      setDraftRestored(false)
+      setDraftStorageStatus('')
       try {
         const data = await boardApi.getPost(postId)
         const canManage = String(user?.userId) === String(data.authorId) || isAdmin(user)
@@ -48,11 +73,29 @@ export default function PostEditPage() {
 
         const categoryData = await boardApi.getCategories(data.boardId)
         if (!cancelled) {
+          const savedDraft = readPostDraft(draftKey)
+          const safeCategories = Array.isArray(categoryData) ? categoryData : []
+          const originalTitle = data.title ?? ''
+          const originalContent = data.content ?? ''
+          const originalCategoryId = data.categoryId == null ? '' : String(data.categoryId)
+          const restoredCategoryId = savedDraft && (
+            !savedDraft.categoryId
+            || safeCategories.some((category) => String(category.id) === savedDraft.categoryId)
+          ) ? savedDraft.categoryId : originalCategoryId
+          const hasDifferentDraft = Boolean(savedDraft && (
+            savedDraft.title !== originalTitle
+            || savedDraft.content !== originalContent
+            || restoredCategoryId !== originalCategoryId
+          ))
+
           setPost(data)
-          setCategories(Array.isArray(categoryData) ? categoryData : [])
-          setTitle(data.title ?? '')
-          setContent(data.content ?? '')
-          setCategoryId(data.categoryId == null ? '' : String(data.categoryId))
+          setCategories(safeCategories)
+          setTitle(hasDifferentDraft ? savedDraft.title : originalTitle)
+          setContent(hasDifferentDraft ? savedDraft.content : originalContent)
+          setCategoryId(hasDifferentDraft ? restoredCategoryId : originalCategoryId)
+          setDraftRestored(hasDifferentDraft)
+          setDraftLoadedForKey(draftKey)
+          setDraftPersistenceReady(true)
         }
       } catch (requestError) {
         if (!cancelled) {
@@ -70,21 +113,40 @@ export default function PostEditPage() {
 
     loadEditData()
     return () => { cancelled = true }
-  }, [postId, user?.userId, user?.role, loadVersion])
+  }, [postId, user?.userId, user?.username, user?.role, draftKey, loadVersion])
+
+  useEffect(() => {
+    if (!draftPersistenceReady || draftLoadedForKey !== draftKey || !post || accessDenied || !draftKey) return
+    const matchesOriginal = title === (post.title ?? '')
+      && content === (post.content ?? '')
+      && categoryId === (post.categoryId == null ? '' : String(post.categoryId))
+
+    if (matchesOriginal) {
+      removePostDraft(draftKey)
+      setDraftStorageStatus('')
+      return
+    }
+
+    const saved = savePostDraft(draftKey, { title, content, categoryId })
+    setDraftStorageStatus(saved
+      ? '수정 내용이 현재 브라우저 탭에 임시 저장되었습니다.'
+      : '임시 저장 공간을 사용할 수 없습니다. 현재 화면의 입력 내용은 유지됩니다.')
+  }, [draftPersistenceReady, draftLoadedForKey, post, accessDenied, draftKey, title, content, categoryId])
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (submitLock.current) return
     setError('')
 
-    if (!title.trim() || !content.trim()) {
-      setError('제목과 내용을 모두 입력해 주세요.')
-      return
-    }
-    if (title.trim().length > 200) {
-      setError('제목은 200자 이하로 입력해 주세요.')
+    const validationErrors = validatePost(title, content)
+    setFieldErrors(validationErrors)
+    if (Object.keys(validationErrors).length > 0) {
+      const firstInvalidField = validationErrors.title ? 'edit-post-title' : 'edit-post-content'
+      document.getElementById(firstInvalidField)?.focus()
       return
     }
 
+    submitLock.current = true
     setIsSubmitting(true)
     try {
       await boardApi.updatePost(postId, {
@@ -92,12 +154,27 @@ export default function PostEditPage() {
         content: content.trim(),
         categoryId: categoryId ? Number(categoryId) : null,
       })
+      removePostDraft(draftKey)
+      setDraftPersistenceReady(false)
       navigate(`/posts/${postId}`, { replace: true })
     } catch (requestError) {
-      setError(getErrorMessage(requestError, '게시글 수정에 실패했습니다.'))
+      setError(`${getErrorMessage(requestError, '게시글 수정에 실패했습니다.')} 입력 내용은 유지되며, 임시 저장이 가능하면 현재 탭에 보관됩니다.`)
     } finally {
+      submitLock.current = false
       setIsSubmitting(false)
     }
+  }
+
+  function updateTitle(value) {
+    setTitle(value)
+    setError('')
+    setFieldErrors((current) => ({ ...current, title: '' }))
+  }
+
+  function updateContent(value) {
+    setContent(value)
+    setError('')
+    setFieldErrors((current) => ({ ...current, content: '' }))
   }
 
   if (isLoading) {
@@ -154,8 +231,10 @@ export default function PostEditPage() {
           <h1>게시글 수정</h1>
           <p>수정 사항을 확인한 뒤 저장해 주세요.</p>
         </div>
+        {draftRestored && <div className="post-draft-notice" role="status">저장되지 않은 이전 수정 내용을 복원했습니다. 게시글을 저장하면 임시 저장 내용이 삭제됩니다.</div>}
+        <p className="post-draft-status" role="status">{draftStorageStatus || '내용을 변경하면 현재 브라우저 탭에 임시 저장됩니다. 수정 성공 시 삭제됩니다.'}</p>
         {error && <ErrorMessage className="boards-alert milestone-19-form-error">{error}</ErrorMessage>}
-        <form className="post-create-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
+        <form className="post-create-form" onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
           <label htmlFor="edit-post-category">카테고리 <span className="form-optional">선택</span></label>
           <select id="edit-post-category" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); setError('') }} disabled={isSubmitting}>
             <option value="">카테고리 없음</option>
@@ -168,19 +247,21 @@ export default function PostEditPage() {
             type="text"
             maxLength={200}
             value={title}
-            onChange={(event) => { setTitle(event.target.value); setError('') }}
+            onChange={(event) => updateTitle(event.target.value)}
             placeholder="제목을 입력해 주세요"
-            aria-describedby="edit-post-title-help"
+            aria-describedby={`edit-post-title-help${fieldErrors.title ? ' edit-post-title-error' : ''}`}
+            aria-invalid={Boolean(fieldErrors.title)}
             required
             disabled={isSubmitting}
           />
           <div id="edit-post-title-help" className="post-input-hint">{title.length} / 200자</div>
+          {fieldErrors.title && <p id="edit-post-title-error" className="post-field-error" role="alert">{fieldErrors.title}</p>}
 
           <label htmlFor="edit-post-content">내용 <span className="form-required">필수</span></label>
-          <PostContentField id="edit-post-content" value={content} onChange={(value) => { setContent(value); setError('') }} disabled={isSubmitting} />
+          <PostContentField id="edit-post-content" value={content} onChange={updateContent} disabled={isSubmitting} error={fieldErrors.content || ''} />
 
           <div className="post-form-actions">
-            <Link to={`/posts/${postId}`} className="button button-secondary">취소</Link>
+            <button type="button" className="button button-secondary" onClick={() => navigate(`/posts/${postId}`)} disabled={isSubmitting}>취소</button>
             <button type="submit" className="button button-primary" disabled={isSubmitting}>{isSubmitting ? '저장 중...' : '수정 내용 저장'}</button>
           </div>
         </form>

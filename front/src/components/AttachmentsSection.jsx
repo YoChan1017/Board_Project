@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { boardApi } from '../api/boardApi'
 import { getErrorMessage } from '../api/client'
 import { EmptyState, ErrorMessage, LoadingState, SuccessMessage } from './FeedbackState'
@@ -40,6 +40,7 @@ function triggerDownload(blob, filename) {
 }
 
 export default function AttachmentsSection({ postId, canManage }) {
+  const uploadLock = useRef(false)
   const [attachments, setAttachments] = useState([])
   const [selectedFiles, setSelectedFiles] = useState([])
   const [isDragOver, setIsDragOver] = useState(false)
@@ -47,6 +48,7 @@ export default function AttachmentsSection({ postId, canManage }) {
   const [isUploading, setIsUploading] = useState(false)
   const [busyAttachmentId, setBusyAttachmentId] = useState(null)
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
   const [selectionError, setSelectionError] = useState('')
   const [notice, setNotice] = useState('')
 
@@ -57,12 +59,12 @@ export default function AttachmentsSection({ postId, canManage }) {
 
   const loadAttachments = useCallback(async () => {
     setIsLoading(true)
-    setError('')
+    setLoadError('')
     try {
       const data = await boardApi.getAttachments(postId)
       setAttachments(Array.isArray(data) ? data : [])
     } catch (requestError) {
-      setError(getErrorMessage(requestError, '첨부파일 목록을 불러오지 못했습니다.'))
+      setLoadError(getErrorMessage(requestError, '첨부파일 목록을 불러오지 못했습니다.'))
     } finally {
       setIsLoading(false)
     }
@@ -137,11 +139,13 @@ export default function AttachmentsSection({ postId, canManage }) {
 
   async function handleUpload(event) {
     event.preventDefault()
+    if (uploadLock.current || isUploading) return
     if (selectedFiles.length === 0) {
       setError('먼저 업로드할 파일을 선택해 주세요.')
       return
     }
 
+    uploadLock.current = true
     const filesToUpload = [...selectedFiles]
     setIsUploading(true)
     setError('')
@@ -185,6 +189,7 @@ export default function AttachmentsSection({ postId, canManage }) {
       }
       if (errors.length > 0) setError(errors.join('\n'))
     } finally {
+      uploadLock.current = false
       setIsUploading(false)
     }
   }
@@ -222,7 +227,7 @@ export default function AttachmentsSection({ postId, canManage }) {
   }
 
   return (
-    <section className="attachments-panel" aria-labelledby="attachments-heading">
+    <section className="attachments-panel" aria-labelledby="attachments-heading" aria-busy={isLoading || isUploading || busyAttachmentId !== null}>
       <div className="attachments-heading-row">
         <div>
           <span className="panel-kicker">FILES</span>
@@ -231,12 +236,17 @@ export default function AttachmentsSection({ postId, canManage }) {
         <span className="attachments-limit">파일당 최대 10MB</span>
       </div>
 
+      {loadError && (
+        <ErrorMessage className="boards-alert attachment-alert" actionLabel="다시 불러오기" onAction={loadAttachments}>
+          {loadError}
+        </ErrorMessage>
+      )}
       {error && <ErrorMessage className="boards-alert attachment-alert">{error}</ErrorMessage>}
       {notice && <SuccessMessage className="attachment-notice" as="p">{notice}</SuccessMessage>}
       {selectionError && <ErrorMessage className="boards-alert attachment-alert">{selectionError}</ErrorMessage>}
 
       {canManage && (
-        <form className="attachment-upload-form" onSubmit={handleUpload}>
+        <form className="attachment-upload-form" onSubmit={handleUpload} aria-busy={isUploading}>
           <div
             className={`attachment-dropzone${isDragOver ? ' is-drag-over' : ''}${isUploading ? ' is-disabled' : ''}`}
             onDragEnter={handleDragOver}
@@ -304,7 +314,7 @@ export default function AttachmentsSection({ postId, canManage }) {
 
       {isLoading ? (
         <LoadingState className="attachment-state">첨부파일 목록을 불러오는 중입니다...</LoadingState>
-      ) : attachments.length === 0 ? (
+      ) : loadError ? null : attachments.length === 0 ? (
         <EmptyState className="attachment-empty" title="등록된 첨부파일이 없습니다." />
       ) : (
         <ul className="attachment-list">
