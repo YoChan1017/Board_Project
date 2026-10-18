@@ -40,63 +40,27 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    /*
-    protected User() {
-    }
-    */
+    /** Incremented after credential changes to revoke previously issued JWTs. */
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
+
     public User() {
-    	
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public String getUsername() { return username; }
+    public String getPassword() { return password; }
+    public String getNickname() { return nickname; }
+    public String getEmail() { return email; }
+    public Role getRole() { return role; }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public int getTokenVersion() { return tokenVersion; }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
-    }
+    public void setUsername(String username) { this.username = username; }
+    public void setPassword(String password) { this.password = password; }
+    public void setNickname(String nickname) { this.nickname = nickname; }
+    public void setEmail(String email) { this.email = email; }
+    public void setRole(Role role) { this.role = role; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+    public void setTokenVersion(int tokenVersion) { this.tokenVersion = tokenVersion; }
 }

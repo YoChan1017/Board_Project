@@ -1,11 +1,14 @@
 package com.example.board.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.board.dto.auth.LoginRequest;
 import com.example.board.dto.auth.LoginResponse;
+import com.example.board.dto.auth.PasswordChangeRequest;
 import com.example.board.dto.auth.ProfileResponse;
 import com.example.board.dto.auth.ProfileUpdateRequest;
 import com.example.board.dto.auth.SignupRequest;
@@ -37,22 +40,15 @@ public class UserService {
     @Transactional
     public Long signup(SignupRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BusinessException(
-                    "USERNAME_ALREADY_EXISTS",
-                    "이미 사용 중인 username입니다.");
+            throw new BusinessException("USERNAME_ALREADY_EXISTS", "이미 사용 중인 username입니다.");
         }
-
         if (userRepository.existsByNickname(request.getNickname())) {
-            throw new BusinessException(
-                    "NICKNAME_ALREADY_EXISTS",
-                    "이미 사용 중인 nickname입니다.");
+            throw new BusinessException("NICKNAME_ALREADY_EXISTS", "이미 사용 중인 nickname입니다.");
         }
 
         String email = normalizeEmail(request.getEmail());
         if (email != null && userRepository.existsByEmail(email)) {
-            throw new BusinessException(
-                    "EMAIL_ALREADY_EXISTS",
-                    "이미 사용 중인 email입니다.");
+            throw new BusinessException("EMAIL_ALREADY_EXISTS", "이미 사용 중인 email입니다.");
         }
 
         User user = new User();
@@ -71,12 +67,8 @@ public class UserService {
                 .orElseThrow(() -> new InvalidCredentialsException(
                         "username 또는 password가 올바르지 않습니다."));
 
-        if (user.getDeletedAt() != null) {
-            throw new InvalidCredentialsException(
-                    "username 또는 password가 올바르지 않습니다.");
-        }
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (user.getDeletedAt() != null
+                || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException(
                     "username 또는 password가 올바르지 않습니다.");
         }
@@ -85,7 +77,8 @@ public class UserService {
                 user.getId(),
                 user.getUsername(),
                 user.getNickname(),
-                user.getRole().name());
+                user.getRole().name(),
+                user.getTokenVersion());
 
         return new LoginResponse(
                 accessToken,
@@ -109,30 +102,44 @@ public class UserService {
         String email = normalizeEmail(request.getEmail());
 
         if (userRepository.existsByNicknameAndIdNot(nickname, user.getId())) {
-            throw new BusinessException(
-                    "NICKNAME_ALREADY_EXISTS",
-                    "이미 사용 중인 nickname입니다.");
+            throw new BusinessException("NICKNAME_ALREADY_EXISTS", "이미 사용 중인 nickname입니다.");
         }
-
         if (email != null && userRepository.existsByEmailAndIdNot(email, user.getId())) {
-            throw new BusinessException(
-                    "EMAIL_ALREADY_EXISTS",
-                    "이미 사용 중인 email입니다.");
+            throw new BusinessException("EMAIL_ALREADY_EXISTS", "이미 사용 중인 email입니다.");
         }
 
         user.setNickname(nickname);
         user.setEmail(email);
-        // Flush so auditing updates updatedAt before the response snapshot is created.
         userRepository.flush();
-        // Returning a DTO avoids exposing password hashes or mutable entity internals.
         return new ProfileResponse(user);
+    }
+
+    /** Validates the current password, stores a new hash, and revokes all old JWTs. */
+    @Transactional
+    public void changePassword(String username, PasswordChangeRequest request) {
+        User user = findActiveUser(username);
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            // Use 400 rather than 401: an incorrect form value must not clear the user's session.
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "현재 비밀번호가 올바르지 않습니다.");
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        // Persist the version change before reporting success.
+        userRepository.flush();
     }
 
     private User findActiveUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "사용자 정보를 찾을 수 없습니다."));
-
+                .orElseThrow(() -> new ResourceNotFoundException("사용자 정보를 찾을 수 없습니다."));
         if (user.getDeletedAt() != null) {
             throw new ResourceNotFoundException("사용자 정보를 찾을 수 없습니다.");
         }

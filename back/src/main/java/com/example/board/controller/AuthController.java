@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.board.dto.auth.LoginRequest;
 import com.example.board.dto.auth.LoginResponse;
+import com.example.board.dto.auth.PasswordChangeRequest;
 import com.example.board.dto.auth.ProfileResponse;
 import com.example.board.dto.auth.ProfileUpdateRequest;
 import com.example.board.dto.auth.SignupRequest;
@@ -29,35 +30,36 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<Map<String, Long>> signup(
             @Valid @RequestBody SignupRequest request) {
-
         Long userId = userService.signup(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(Map.of("userId", userId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("userId", userId));
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
-
-        LoginResponse response = userService.login(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userService.login(request));
     }
 
-    /** Returns the authenticated user's safe profile, never a client-selected account. */
+    /** Returns the authenticated user's safe profile. */
     @GetMapping("/me")
     public ResponseEntity<ProfileResponse> me(Authentication authentication) {
         return ResponseEntity.ok(userService.getProfile(authentication.getName()));
     }
 
-    /** Updates only the nickname and optional email of the authenticated user. */
+    /** Updates profile fields of the authenticated user only. */
     @PutMapping("/me")
     public ResponseEntity<ProfileResponse> updateMe(
             Authentication authentication,
             @Valid @RequestBody ProfileUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateProfile(authentication.getName(), request));
+    }
 
-        return ResponseEntity.ok(
-                userService.updateProfile(authentication.getName(), request));
+    /** Updates the password and invalidates tokens issued before the change. */
+    @PutMapping("/password")
+    public ResponseEntity<Void> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody PasswordChangeRequest request) {
+        userService.changePassword(authentication.getName(), request);
+        return ResponseEntity.noContent().build();
     }
 }
