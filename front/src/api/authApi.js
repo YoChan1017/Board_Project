@@ -24,4 +24,8 @@ export const authApi = {
   async changePassword(payload) {
     await apiClient.put('/auth/password', payload)
   },
+
+  async withdrawAccount(payload) {
+    await apiClient.delete('/auth/me', { data: payload })
+  },
 }

@@ -66,8 +66,8 @@ export default function PasswordChangePage() {
       <section className="security-heading">
         <div>
           <span className="eyebrow"><span className="eyebrow-dot" /> ACCOUNT SECURITY</span>
-          <h1>비밀번호 변경</h1>
-          <p>현재 비밀번호를 확인한 다음 새 비밀번호를 설정합니다.</p>
+          <h1>보안 설정</h1>
+          <p>계정 비밀번호를 변경하거나 계정 이용을 종료할 수 있습니다.</p>
         </div>
         <Link className="button button-secondary" to="/profile">내 프로필 <span aria-hidden="true">→</span></Link>
       </section>
@@ -130,6 +130,15 @@ export default function PasswordChangePage() {
             {isSubmitting ? '변경 중...' : '비밀번호 변경'} <span aria-hidden="true">→</span>
           </button>
         </form>
+      </section>
+
+      <section className="withdrawal-entry" aria-labelledby="withdrawal-entry-heading">
+        <div>
+          <span className="withdrawal-entry-kicker">ACCOUNT CLOSURE</span>
+          <h2 id="withdrawal-entry-heading">회원 탈퇴</h2>
+          <p>계정을 더 이상 사용하지 않으려는 경우, 본인 확인 후 개인정보를 정리하고 계정을 비활성화할 수 있습니다.</p>
+        </div>
+        <Link to="/account/withdraw" className="button withdrawal-entry-button">회원 탈퇴</Link>
       </section>
     </main>
   )

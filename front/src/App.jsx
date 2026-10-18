@@ -5,6 +5,7 @@ import AppLayout from './components/AppLayout'
 import { GuestRoute, ProtectedRoute } from './components/RouteGuards'
 import AdminBoardManagementPage from './pages/AdminBoardManagementPage'
 import AdminPostManagementPage from './pages/AdminPostManagementPage'
+import AccountWithdrawalPage from './pages/AccountWithdrawalPage'
 import BoardsPage from './pages/BoardsPage'
 import DashboardPage from './pages/DashboardPage'
 import GlobalSearchPage from './pages/GlobalSearchPage'
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/activity" element={<MyActivityPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/security" element={<PasswordChangePage />} />
+          <Route path="/account/withdraw" element={<AccountWithdrawalPage />} />
           <Route path="/search" element={<GlobalSearchPage />} />
           <Route path="/boards" element={<BoardsPage />} />
           <Route path="/boards/:boardId/posts/new" element={<PostCreatePage />} />
