@@ -15,4 +15,9 @@ export const authApi = {
     const response = await apiClient.get('/auth/me')
     return response.data
   },
+
+  async updateMe(payload) {
+    const response = await apiClient.put('/auth/me', payload)
+    return response.data
+  },
 }
