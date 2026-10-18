@@ -2789,3 +2789,29 @@ button:disabled,
   .profile-summary-card { padding: 26px 22px 22px; }
   .profile-editor-card { padding: 24px 20px; }
 }
+
+/* 24차: 비밀번호 변경 / 보안 설정 화면. */
+.security-page { width: min(920px, calc(100% - 48px)); flex: 1; margin: 0 auto; padding: 64px 0 88px; }
+.security-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 28px; }
+.security-heading h1 { margin: 13px 0 8px; color: var(--ink); font-size: clamp(28px, 4vw, 38px); letter-spacing: -1.5px; }
+.security-heading p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.security-card { width: min(100%, 620px); padding: 30px; border: 1px solid var(--border); border-radius: 20px; background: rgba(255,255,255,.96); box-shadow: 0 14px 45px rgba(55,42,128,.05); }
+.security-card-heading { display: flex; align-items: center; gap: 14px; padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid #f0eef8; }
+.security-card-icon { display: grid; flex: 0 0 42px; height: 42px; place-items: center; border-radius: 13px; color: var(--purple); background: var(--soft-purple); font-size: 22px; }
+.security-card-heading h2 { margin: 0 0 6px; color: var(--ink); font-size: 16px; }
+.security-card-heading p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.security-form { display: flex; flex-direction: column; gap: 9px; }
+.security-form label { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: #4f4a66; font-size: 12px; font-weight: 700; }
+.security-form label span { color: #9a96ad; font-size: 10px; font-weight: 500; }
+.security-form input { width: 100%; min-height: 45px; padding: 0 13px; border: 1px solid #e6e3f0; border-radius: 10px; color: var(--ink); background: #fdfcff; font-size: 12px; outline: none; transition: border-color .18s, box-shadow .18s, background .18s; }
+.security-form input:focus { border-color: #a69af3; background: #fff; box-shadow: 0 0 0 3px rgba(101,86,217,.08); }
+.security-form input:invalid:not(:placeholder-shown) { border-color: #e9b5bb; }
+.security-form-help { margin: 5px 0 4px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.security-error { margin-bottom: 18px; }
+@media (max-width: 680px) {
+  .security-page { width: calc(100% - 36px); padding: 43px 0 62px; }
+  .security-heading { align-items: flex-start; flex-direction: column; gap: 16px; }
+  .security-heading h1 { font-size: 29px; }
+  .security-card { padding: 22px 19px; border-radius: 17px; }
+  .security-card-heading { align-items: flex-start; }
+}

@@ -11,6 +11,7 @@ import GlobalSearchPage from './pages/GlobalSearchPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import MyActivityPage from './pages/MyActivityPage'
+import PasswordChangePage from './pages/PasswordChangePage'
 import PostCreatePage from './pages/PostCreatePage'
 import PostDetailPage from './pages/PostDetailPage'
 import PostEditPage from './pages/PostEditPage'
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/activity" element={<MyActivityPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/security" element={<PasswordChangePage />} />
           <Route path="/search" element={<GlobalSearchPage />} />
           <Route path="/boards" element={<BoardsPage />} />
           <Route path="/boards/:boardId/posts/new" element={<PostCreatePage />} />

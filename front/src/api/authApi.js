@@ -20,4 +20,8 @@ export const authApi = {
     const response = await apiClient.put('/auth/me', payload)
     return response.data
   },
+
+  async changePassword(payload) {
+    await apiClient.put('/auth/password', payload)
+  },
 }
