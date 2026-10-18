@@ -4,10 +4,13 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.board.dto.auth.LoginRequest;
 import com.example.board.dto.auth.LoginResponse;
+import com.example.board.dto.auth.ProfileResponse;
+import com.example.board.dto.auth.ProfileUpdateRequest;
 import com.example.board.dto.auth.SignupRequest;
 import com.example.board.service.UserService;
 
@@ -39,18 +42,22 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request) {
 
         LoginResponse response = userService.login(request);
-
         return ResponseEntity.ok(response);
     }
-    
-    @GetMapping("/me") // 임시
-    public ResponseEntity<Map<String, Object>> me(
-            org.springframework.security.core.Authentication authentication) {
+
+    /** Returns the authenticated user's safe profile, never a client-selected account. */
+    @GetMapping("/me")
+    public ResponseEntity<ProfileResponse> me(Authentication authentication) {
+        return ResponseEntity.ok(userService.getProfile(authentication.getName()));
+    }
+
+    /** Updates only the nickname and optional email of the authenticated user. */
+    @PutMapping("/me")
+    public ResponseEntity<ProfileResponse> updateMe(
+            Authentication authentication,
+            @Valid @RequestBody ProfileUpdateRequest request) {
 
         return ResponseEntity.ok(
-                Map.of(
-                        "username", authentication.getName()
-                )
-        );
+                userService.updateProfile(authentication.getName(), request));
     }
 }
