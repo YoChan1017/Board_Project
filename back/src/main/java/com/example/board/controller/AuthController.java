@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.board.dto.auth.AccountDeletionRequest;
 import com.example.board.dto.auth.LoginRequest;
 import com.example.board.dto.auth.LoginResponse;
 import com.example.board.dto.auth.PasswordChangeRequest;
@@ -60,6 +61,15 @@ public class AuthController {
             Authentication authentication,
             @Valid @RequestBody PasswordChangeRequest request) {
         userService.changePassword(authentication.getName(), request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Soft-deletes the authenticated account after confirming the password and phrase. */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdrawMe(
+            Authentication authentication,
+            @Valid @RequestBody AccountDeletionRequest request) {
+        userService.withdrawAccount(authentication.getName(), request);
         return ResponseEntity.noContent().build();
     }
 }

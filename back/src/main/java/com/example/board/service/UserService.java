@@ -1,11 +1,15 @@
 package com.example.board.service;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.board.dto.auth.AccountDeletionRequest;
 import com.example.board.dto.auth.LoginRequest;
 import com.example.board.dto.auth.LoginResponse;
 import com.example.board.dto.auth.PasswordChangeRequest;
@@ -23,6 +27,8 @@ import com.example.board.security.JwtTokenProvider;
 @Service
 @Transactional(readOnly = true)
 public class UserService {
+
+    private static final String WITHDRAWAL_CONFIRMATION = "탈퇴합니다";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -120,7 +126,6 @@ public class UserService {
         User user = findActiveUser(username);
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            // Use 400 rather than 401: an incorrect form value must not clear the user's session.
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "현재 비밀번호가 올바르지 않습니다.");
@@ -133,8 +138,58 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setTokenVersion(user.getTokenVersion() + 1);
-        // Persist the version change before reporting success.
         userRepository.flush();
+    }
+
+    /**
+     * Soft-deletes an account while preserving foreign-key references from posts and comments.
+     * PII is minimized, the username becomes reusable, and old JWTs remain bound to their
+     * original user ID so they cannot authenticate as a later account with the same username.
+     */
+    @Transactional
+    public void withdrawAccount(String username, AccountDeletionRequest request) {
+        User user = findActiveUser(username);
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "현재 비밀번호가 올바르지 않습니다.");
+        }
+        if (!WITHDRAWAL_CONFIRMATION.equals(request.getConfirmationText())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "탈퇴 확인란에 '탈퇴합니다'를 정확히 입력해 주세요.");
+        }
+
+        user.setDeletedAt(LocalDateTime.now());
+        user.setUsername(createWithdrawnUsername(user));
+        user.setNickname(createWithdrawnNickname(user));
+        user.setEmail(null);
+        // Replace the old credential hash; the raw random value is never returned or stored.
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        userRepository.flush();
+    }
+
+    private String createWithdrawnUsername(User user) {
+        String base = "withdrawn_" + user.getId();
+        String candidate = base;
+        int suffix = 1;
+        while (candidate.equals(user.getUsername()) || userRepository.existsByUsername(candidate)) {
+            candidate = base + "_" + suffix++;
+        }
+        return candidate;
+    }
+
+    private String createWithdrawnNickname(User user) {
+        String base = "탈퇴회원_" + user.getId();
+        String candidate = base;
+        int suffix = 1;
+        while (candidate.equals(user.getNickname())
+                || userRepository.existsByNicknameAndIdNot(candidate, user.getId())) {
+            candidate = base + "_" + suffix++;
+        }
+        return candidate;
     }
 
     private User findActiveUser(String username) {

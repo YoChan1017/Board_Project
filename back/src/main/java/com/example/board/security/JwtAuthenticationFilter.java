@@ -45,14 +45,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtTokenProvider.validateToken(token);
             String username = claims.getSubject();
             Integer claimVersion = claims.get("tokenVersion", Integer.class);
-            // Existing pre-migration JWTs have no claim and remain version 0.
+            // Existing pre-V8 tokens lack only tokenVersion and are treated as version zero.
             int tokenVersion = claimVersion == null ? 0 : claimVersion;
+            Object userIdValue = claims.get("userId");
+            if (!(userIdValue instanceof Number userIdNumber)) {
+                throw new IllegalArgumentException("JWT userId claim is missing or invalid.");
+            }
+            long tokenUserId = userIdNumber.longValue();
 
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 if (!(userDetails instanceof VersionedUserDetails versionedUser)
-                        || versionedUser.getTokenVersion() != tokenVersion) {
-                    throw new IllegalArgumentException("JWT token version is no longer current.");
+                        || versionedUser.getTokenVersion() != tokenVersion
+                        || !versionedUser.getUserId().equals(tokenUserId)) {
+                    throw new IllegalArgumentException("JWT identity or version is no longer current.");
                 }
 
                 UsernamePasswordAuthenticationToken authentication =
