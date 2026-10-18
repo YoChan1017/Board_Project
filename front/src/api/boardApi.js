@@ -1,5 +1,10 @@
 import apiClient from './client'
 
+// Share in-flight detail requests. React StrictMode intentionally runs mount
+// effects twice in development; without this guard, a view-counting GET could
+// be sent twice for a single page visit.
+const inFlightPostRequests = new Map()
+
 export const boardApi = {
   async getBoards() {
     const response = await apiClient.get('/boards')
@@ -66,8 +71,20 @@ export const boardApi = {
   },
 
   async getPost(postId) {
-    const response = await apiClient.get(`/posts/${postId}`)
-    return response.data
+    const key = String(postId)
+    const existingRequest = inFlightPostRequests.get(key)
+    if (existingRequest) return existingRequest
+
+    const request = apiClient.get(`/posts/${postId}`).then((response) => response.data)
+    inFlightPostRequests.set(key, request)
+
+    try {
+      return await request
+    } finally {
+      if (inFlightPostRequests.get(key) === request) {
+        inFlightPostRequests.delete(key)
+      }
+    }
   },
 
   async createPost(boardId, payload) {

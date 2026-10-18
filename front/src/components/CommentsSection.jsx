@@ -207,22 +207,23 @@ export default function CommentsSection({ postId, user }) {
   }
 
   function renderComment(comment, level = 0) {
-    const canManage = canManageComment(comment, user)
+    const isDeleted = Boolean(comment.deleted ?? comment.isDeleted)
+    const canManage = !isDeleted && canManageComment(comment, user)
     const childComments = childrenByParent.get(String(comment.id)) ?? []
-    const isEditing = String(editingCommentId) === String(comment.id)
-    const isReplying = String(replyToId) === String(comment.id)
+    const isEditing = !isDeleted && String(editingCommentId) === String(comment.id)
+    const isReplying = !isDeleted && String(replyToId) === String(comment.id)
     const isBusy = String(busyCommentId) === String(comment.id)
 
     return (
-      <article className={`comment-item${level > 0 ? ' comment-reply' : ''}`} key={comment.id} style={{ marginLeft: `${Math.min(level, 3) * 20}px` }}>
+      <article className={`comment-item${level > 0 ? ' comment-reply' : ''}${isDeleted ? ' comment-deleted' : ''}`} key={comment.id} style={{ marginLeft: `${Math.min(level, 3) * 20}px` }}>
         <div className="comment-head">
           <div className="comment-author-line">
-            <strong>{comment.authorNickname || '알 수 없는 사용자'}</strong>
+            <strong>{isDeleted ? '삭제된 댓글' : (comment.authorNickname || '알 수 없는 사용자')}</strong>
             <time dateTime={comment.createdAt || undefined}>{formatCommentDate(comment.createdAt)}</time>
-            {comment.updatedAt && comment.updatedAt !== comment.createdAt && <span className="comment-edited-mark">수정됨</span>}
+            {!isDeleted && comment.updatedAt && comment.updatedAt !== comment.createdAt && <span className="comment-edited-mark">수정됨</span>}
           </div>
           <div className="comment-actions">
-            <button type="button" className="comment-action" onClick={() => { setReplyToId(isReplying ? null : comment.id); setReplyContent(''); setEditingCommentId(null); setError(''); setNotice('') }}>답글</button>
+            {!isDeleted && <button type="button" className="comment-action" onClick={() => { setReplyToId(isReplying ? null : comment.id); setReplyContent(''); setEditingCommentId(null); setError(''); setNotice('') }}>답글</button>}
             {canManage && <button type="button" className="comment-action" onClick={() => { setEditingCommentId(comment.id); setEditingContent(comment.content); setReplyToId(null); setError(''); setNotice('') }}>수정</button>}
             {canManage && <button type="button" className="comment-action comment-action-danger" disabled={busyCommentId !== null || isSubmitting} onClick={() => handleDelete(comment)}>{isBusy ? '삭제 중...' : '삭제'}</button>}
           </div>
@@ -252,7 +253,7 @@ export default function CommentsSection({ postId, user }) {
             </div>
           </div>
         ) : (
-          <p className="comment-content">{comment.content}</p>
+          <p className={`comment-content${isDeleted ? ' comment-content-deleted' : ''}`}>{isDeleted ? '삭제된 댓글입니다.' : comment.content}</p>
         )}
 
         {isReplying && (
