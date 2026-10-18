@@ -125,14 +125,21 @@ public class PostService {
     @Transactional
     public PostResponse findById(Long postId) {
 
+        int updatedRows = postRepository.incrementViewCount(postId);
+        if (updatedRows == 0) {
+            throw new ResourceNotFoundException(
+                    "게시글을 찾을 수 없습니다."
+            );
+        }
+
+        // The modifying query clears the persistence context. Reload the row
+        // so the response contains the newly incremented value.
         Post post = postRepository
                 .findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "게시글을 찾을 수 없습니다."
                         ));
-
-        post.setViewCount(post.getViewCount() + 1);
 
         return PostResponse.from(post);
     }

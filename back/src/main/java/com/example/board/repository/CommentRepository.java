@@ -14,8 +14,8 @@ import com.example.board.entity.Comment;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    // 특정 게시글의 삭제되지 않은 댓글 목록
-    List<Comment> findByPostIdAndDeletedAtIsNullOrderByCreatedAtAsc(Long postId);
+    // Include soft-deleted comments so replies can retain their parent thread.
+    List<Comment> findByPostIdOrderByCreatedAtAscIdAsc(Long postId);
 
     // 삭제되지 않은 댓글 상세 조회
     Optional<Comment> findByIdAndDeletedAtIsNull(Long commentId);

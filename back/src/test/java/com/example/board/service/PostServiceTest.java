@@ -1,4 +1,3 @@
-
 package com.example.board.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,9 +64,9 @@ class PostServiceTest {
 
     @Test
     void 음수_페이지_번호는_400_오류를_발생시킨다() {
-    	when(boardRepository.existsById(BOARD_ID))
-        .thenReturn(true);
-    	
+        when(boardRepository.existsById(BOARD_ID))
+                .thenReturn(true);
+
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
                 () -> postService.findByBoardId(BOARD_ID, -1, 10, null)
@@ -83,9 +82,9 @@ class PostServiceTest {
 
     @Test
     void 페이지_크기가_허용_범위를_벗어나면_400_오류를_발생시킨다() {
-    	when(boardRepository.existsById(BOARD_ID))
-        .thenReturn(true);
-    	
+        when(boardRepository.existsById(BOARD_ID))
+                .thenReturn(true);
+
         ResponseStatusException zeroSizeException = assertThrows(
                 ResponseStatusException.class,
                 () -> postService.findByBoardId(BOARD_ID, 0, 0, null)
@@ -111,9 +110,9 @@ class PostServiceTest {
 
     @Test
     void 검색어를_공백_제거한_후_페이지와_정렬을_적용한다() {
-    	when(boardRepository.existsById(BOARD_ID))
-        .thenReturn(true);
-    	
+        when(boardRepository.existsById(BOARD_ID))
+                .thenReturn(true);
+
         when(postRepository.searchActivePostsByBoardIdAndKeyword(
                 eq(BOARD_ID),
                 anyString(),
@@ -158,9 +157,9 @@ class PostServiceTest {
 
     @Test
     void 검색어가_공백뿐이면_일반_게시글_목록을_조회한다() {
-    	when(boardRepository.existsById(BOARD_ID))
-        .thenReturn(true);
-    	
+        when(boardRepository.existsById(BOARD_ID))
+                .thenReturn(true);
+
         when(postRepository.findByBoardIdAndDeletedAtIsNull(
                 eq(BOARD_ID),
                 any(Pageable.class)
@@ -176,5 +175,37 @@ class PostServiceTest {
         );
 
         verifyNoInteractions(categoryRepository, userRepository);
+    }
+
+    @Test
+    void 게시글_상세_조회는_원자적으로_조회수를_증가시킨_후_최신값을_반환한다() {
+        Post post = org.mockito.Mockito.mock(Post.class);
+        com.example.board.entity.Board board =
+                org.mockito.Mockito.mock(com.example.board.entity.Board.class);
+        com.example.board.entity.User user =
+                org.mockito.Mockito.mock(com.example.board.entity.User.class);
+
+        when(postRepository.incrementViewCount(10L)).thenReturn(1);
+        when(postRepository.findByIdAndDeletedAtIsNull(10L))
+                .thenReturn(java.util.Optional.of(post));
+        when(post.getId()).thenReturn(10L);
+        when(post.getBoard()).thenReturn(board);
+        when(board.getId()).thenReturn(20L);
+        when(post.getUser()).thenReturn(user);
+        when(user.getId()).thenReturn(30L);
+        when(user.getNickname()).thenReturn("작성자");
+        when(post.getTitle()).thenReturn("제목");
+        when(post.getContent()).thenReturn("내용");
+        when(post.getViewCount()).thenReturn(11);
+        when(post.getLikeCount()).thenReturn(0);
+        when(post.getCreatedAt()).thenReturn(java.time.LocalDateTime.now());
+        when(post.getUpdatedAt()).thenReturn(java.time.LocalDateTime.now());
+
+        com.example.board.dto.post.PostResponse response =
+                postService.findById(10L);
+
+        assertEquals(11, response.getViewCount());
+        verify(postRepository).incrementViewCount(10L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(10L);
     }
 }

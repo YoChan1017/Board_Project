@@ -13,6 +13,7 @@ public class CommentListResponse {
     private final String content;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
+    private final boolean deleted;
 
     public CommentListResponse(
             Long id,
@@ -21,7 +22,8 @@ public class CommentListResponse {
             String authorNickname,
             String content,
             LocalDateTime createdAt,
-            LocalDateTime updatedAt) {
+            LocalDateTime updatedAt,
+            boolean deleted) {
 
         this.id = id;
         this.parentId = parentId;
@@ -30,6 +32,7 @@ public class CommentListResponse {
         this.content = content;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.deleted = deleted;
     }
 
     public static CommentListResponse from(Comment comment) {
@@ -40,14 +43,22 @@ public class CommentListResponse {
             parentId = comment.getParent().getId();
         }
 
+        boolean deleted = comment.getDeletedAt() != null;
+        Long authorId = deleted ? null : comment.getUser().getId();
+        String authorNickname = deleted
+                ? "삭제된 댓글"
+                : comment.getUser().getNickname();
+        String content = deleted ? "삭제된 댓글입니다." : comment.getContent();
+
         return new CommentListResponse(
                 comment.getId(),
                 parentId,
-                comment.getUser().getId(),
-                comment.getUser().getNickname(),
-                comment.getContent(),
+                authorId,
+                authorNickname,
+                content,
                 comment.getCreatedAt(),
-                comment.getUpdatedAt()
+                comment.getUpdatedAt(),
+                deleted
         );
     }
 
@@ -77,5 +88,9 @@ public class CommentListResponse {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
     }
 }

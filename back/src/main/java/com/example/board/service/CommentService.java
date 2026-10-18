@@ -50,7 +50,7 @@ public class CommentService {
         }
 
         return commentRepository
-                .findByPostIdAndDeletedAtIsNullOrderByCreatedAtAsc(postId)
+                .findByPostIdOrderByCreatedAtAscIdAsc(postId)
                 .stream()
                 .map(CommentListResponse::from)
                 .toList();

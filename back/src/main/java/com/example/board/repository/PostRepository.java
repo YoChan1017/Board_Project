@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -73,4 +74,19 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     // Find an active post by ID
     Optional<Post> findByIdAndDeletedAtIsNull(Long postId);
+
+    /**
+     * Atomically increments a post's view count so concurrent requests
+     * cannot overwrite one another with a stale in-memory count.
+     *
+     * @return number of updated rows (0 when the post is missing/deleted)
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE Post p
+            SET p.viewCount = p.viewCount + 1
+            WHERE p.id = :postId
+              AND p.deletedAt IS NULL
+            """)
+    int incrementViewCount(@Param("postId") Long postId);
 }
