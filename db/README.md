@@ -1,39 +1,20 @@
-# DB 설계 문서
+# Database
 
-`board-project`의 Spring Boot Backend를 개발하기 전에 MariaDB 데이터 모델을 설계하고 검토하기 위한 디렉터리이다.
+Board Project의 MariaDB 데이터 설계와 SQL 참고 자료를 보관합니다.
 
-> 이 디렉터리는 설계/문서화 목적이다. 실제 Spring Boot 실행 시 적용되는 Database Migration은 나중에 `back/src/main/resources/db/migration/`으로 옮겨 Flyway가 관리한다.
+## 구성
 
-## 디렉터리
+- `requirements.md`: 데이터 요구사항
+- `erd/board-erd.md`: 테이블 관계도
+- `schema/`: 테이블별 설계 문서
+- `sql/draft_schema.sql`: 설계용 SQL 초안
+- `seed/test_data.sql`: 개발·테스트용 예시 데이터
+- `FILE_MANIFEST.md`: 파일 목록
 
-```text
-db/
-├── README.md
-├── requirements.md
-├── erd/
-│   └── board-erd.md
-├── schema/
-│   ├── users.md
-│   ├── boards.md
-│   ├── categories.md
-│   ├── posts.md
-│   ├── comments.md
-│   ├── post_likes.md
-│   └── attachments.md
-├── sql/
-│   └── draft_schema.sql
-└── seed/
-    └── test_data.sql
-```
+## 적용 방식
 
-## 설계 원칙
+실제 애플리케이션 스키마는 `back/src/main/resources/db/migration/`의 Flyway 마이그레이션으로 관리합니다. 현재 `V1`~`V8`이 있으며, 백엔드 실행 시 자동 적용됩니다.
 
-1. 회원, 게시판, 게시글, 댓글, 좋아요, 첨부파일을 별도 도메인으로 분리한다.
-2. 주요 테이블은 `BIGINT` 기반 surrogate primary key를 사용한다.
-3. 테이블 간 관계는 FK로 명시한다.
-4. 삭제 이력 보존이 필요한 테이블은 `deleted_at` 기반 Soft Delete를 사용한다.
-5. 비밀번호는 원문을 저장하지 않고 BCrypt 등의 해시 결과를 저장한다.
-6. 게시글 목록 조회 패턴을 고려하여 인덱스를 설계한다.
-7. 좋아요 중복은 `(post_id, user_id)` Unique Constraint로 방지한다.
-8. 실제 파일 바이너리는 DB에 직접 저장하지 않고 파일 저장소/Object Storage를 사용하며 DB에는 메타데이터만 저장한다.
-9. DB 구조 변경은 확정 후 Flyway Migration으로 버전 관리한다.
+DB 기본 이름은 `board_db`입니다. MariaDB에 데이터베이스를 준비하고 백엔드의 `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` 설정을 맞춰주세요.
+
+> `sql/draft_schema.sql`과 `seed/test_data.sql`은 참고 자료입니다. Flyway로 관리되는 환경에서 초안 스키마를 다시 실행하지 마세요. 이미 적용된 마이그레이션 파일은 수정하지 말고 변경 사항은 새 버전 파일(`V9__...sql` 등)로 추가합니다.

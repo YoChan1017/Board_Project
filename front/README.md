@@ -1,16 +1,31 @@
-# React + Vite
+# Board Project Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 기반 게시판 웹 애플리케이션입니다.
 
-Currently, two official plugins are available:
+## 기술 스택
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19, Vite 8
+- React Router, Axios
+- Oxlint
 
-## React Compiler
+## 실행
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Node.js와 npm을 설치하고 아래 명령을 실행합니다.
 
-## Expanding the Oxlint configuration
+```bash
+cd front
+npm ci
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Vite가 출력하는 로컬 주소로 접속합니다. 개발 서버의 `/api` 요청은 `http://localhost:8080`으로 전달되므로 백엔드가 먼저 실행 중이어야 합니다.
+
+## 확인 명령
+
+```bash
+npm run lint
+npm run build
+npm run preview
+```
+
+`npm run preview`는 빌드 결과를 로컬에서 확인할 때 사용합니다.
