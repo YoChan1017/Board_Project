@@ -6,7 +6,9 @@ import { GuestRoute, ProtectedRoute } from './components/RouteGuards'
 import AdminBoardManagementPage from './pages/AdminBoardManagementPage'
 import AdminPostManagementPage from './pages/AdminPostManagementPage'
 import AccountWithdrawalPage from './pages/AccountWithdrawalPage'
-import BoardsPage from './pages/BoardsPage'
+import BoardDirectoryPage from './pages/BoardDirectoryPage'
+import BoardPostsPage from './pages/BoardPostsPage'
+import AdminUsersPage from './pages/AdminUsersPage'
 import DashboardPage from './pages/DashboardPage'
 import GlobalSearchPage from './pages/GlobalSearchPage'
 import HomePage from './pages/HomePage'
@@ -52,12 +54,14 @@ export default function App() {
           <Route path="/security" element={<PasswordChangePage />} />
           <Route path="/account/withdraw" element={<AccountWithdrawalPage />} />
           <Route path="/search" element={<GlobalSearchPage />} />
-          <Route path="/boards" element={<BoardsPage />} />
+          <Route path="/boards" element={<BoardDirectoryPage />} />
+          <Route path="/boards/:boardId/posts" element={<BoardPostsPage />} />
           <Route path="/boards/:boardId/posts/new" element={<PostCreatePage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/posts/:postId/edit" element={<PostEditPage />} />
           <Route path="/admin/boards" element={<AdminRoute><AdminBoardManagementPage /></AdminRoute>} />
           <Route path="/admin/posts" element={<AdminRoute><AdminPostManagementPage /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

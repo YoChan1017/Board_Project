@@ -55,9 +55,10 @@ export default function AppLayout() {
               <NavLink to="/profile" className={navLinkClass} onClick={closeMenu}>내 프로필</NavLink>
               <NavLink to="/security" className={navLinkClass} onClick={closeMenu}>보안 설정</NavLink>
               <NavLink to="/search" className={navLinkClass} onClick={closeMenu}>통합 검색</NavLink>
-              <NavLink to="/boards" className={navLinkClass} onClick={closeMenu}>게시판</NavLink>
+              <NavLink to="/boards" className={navLinkClass} onClick={closeMenu}>게시판 목록</NavLink>
               {isAdmin(user) && <NavLink to="/admin/boards" className={navLinkClass} onClick={closeMenu}>게시판 관리</NavLink>}
               {isAdmin(user) && <NavLink to="/admin/posts" className={navLinkClass} onClick={closeMenu}>글 관리</NavLink>}
+              {isAdmin(user) && <NavLink to="/admin/users" className={navLinkClass} onClick={closeMenu}>회원 관리</NavLink>}
               <span className="nav-user">{user.nickname || user.username}</span>
               <button type="button" className="button button-quiet button-small" onClick={handleLogout}>로그아웃</button>
             </>
