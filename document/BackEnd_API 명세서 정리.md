@@ -15,7 +15,7 @@
 11. 관리자 회원 API
 12. 공통 오류 응답
 13. DTO 요약
-14. 구현상 확인 사항
+14. 구현상 참고 사항
 
 ---
 
@@ -56,7 +56,7 @@ Authorization: Bearer <accessToken>
 | 댓글 수정·삭제 | 댓글 작성자 또는 `ADMIN` |
 | 첨부파일 업로드·삭제 | 게시글 작성자 또는 `ADMIN` |
 | 첨부파일 목록·다운로드 | 로그인 사용자. 파일 소유자 여부를 별도로 검사하지 않음 |
-| 관리자 회원 목록 | `ADMIN` 전용 의도. 현재 권한 처리의 확인 사항은 14절 참고 |
+| 관리자 회원 목록 | `ADMIN` 전용 |
 
 JWT 만료 시간은 `jwt.expiration-ms` 설정을 따르며 기본값은 `3600000`ms(1시간)입니다. 비밀번호 변경 및 계정 탈퇴 시 `tokenVersion`이 증가하여 기존 토큰을 무효화하도록 구현되어 있습니다.
 
@@ -109,7 +109,7 @@ JWT 만료 시간은 `jwt.expiration-ms` 설정을 따르며 기본값은 `36000
 | 첨부파일 | `DELETE` | `/api/attachments/{attachmentId}` | 204 | 작성자/ADMIN | 첨부파일 삭제 |
 | 내 활동 | `GET` | `/api/me/posts` | 200 | 로그인 | 내가 작성한 게시글 페이지·검색 |
 | 내 활동 | `GET` | `/api/me/comments` | 200 | 로그인 | 내가 작성한 댓글 페이지·검색 |
-| 관리자 | `GET` | `/api/admin/users` | 200 | ADMIN 의도 | 회원 목록(탈퇴 계정 포함 가능) |
+| 관리자 | `GET` | `/api/admin/users` | 200 | ADMIN | 회원 목록(탈퇴 계정 포함 가능) |
 
 ---
 
@@ -315,7 +315,9 @@ JWT 만료 시간은 `jwt.expiration-ms` 설정을 따르며 기본값은 `36000
 
 ### 5.3 카테고리 삭제
 
-`DELETE /api/categories/{categoryId}` — `ADMIN` 전용. 성공 `204 No Content`. 카테고리가 게시글에서 참조되고 DB 제약조건이 삭제를 막으면 `409 DATA_INTEGRITY_VIOLATION`이 반환될 수 있습니다.
+`DELETE /api/categories/{categoryId}` — `ADMIN` 전용. 성공 `204 No Content`입니다.
+
+DB 외래 키 `fk_posts_category`는 `ON DELETE SET NULL`로 설정되어 있습니다. 따라서 해당 카테고리를 참조하던 게시글은 삭제되지 않고 `category_id`가 `NULL`로 변경됩니다. 이후 게시글 응답의 `categoryId`와 `categoryName`은 `null`일 수 있습니다.
 
 ---
 
@@ -586,7 +588,7 @@ curl -X POST "http://localhost:8080/api/posts/12/attachments" \
   -F "file=@./example.pdf"
 ```
 
-파일이 비어 있거나 유효하지 않으면 400 계열 오류, 크기 제한을 초과하면 `413 FILE_TOO_LARGE`가 될 수 있습니다. 게시글 권한 위반은 서비스 비즈니스 오류로 처리됩니다.
+기본 설정(`spring.servlet.multipart.max-file-size=10MB`, `spring.servlet.multipart.max-request-size=12MB`)에서 multipart 업로드 제한을 초과하면 `413 FILE_TOO_LARGE`가 반환됩니다. 요청이 서비스 계층까지 전달된 뒤 `AttachmentService`의 파일 크기 검증에 걸리는 경우에는 `400 BAD_REQUEST`가 반환될 수 있습니다. 비어 있는 파일이나 파일명 등 다른 유효성 오류도 400 계열 응답입니다. 게시글 권한 위반은 `409 ATTACHMENT_ACCESS_DENIED`입니다.
 
 ### 9.3 다운로드
 
@@ -598,7 +600,7 @@ curl -X POST "http://localhost:8080/api/posts/12/attachments" \
 
 `DELETE /api/attachments/{attachmentId}` — 게시글 작성자 또는 `ADMIN`, 성공 `204 No Content`.
 
-파일과 DB 메타데이터를 삭제합니다. 게시글 권한 위반과 저장소 오류는 서비스 예외 처리 결과를 따릅니다.
+파일과 DB 메타데이터를 삭제합니다. 권한 위반은 `409 ATTACHMENT_ACCESS_DENIED`이며 저장소 오류는 서버 오류 응답으로 처리됩니다.
 
 ### 9.5 파일 저장 설정
 
@@ -638,7 +640,7 @@ curl -X POST "http://localhost:8080/api/posts/12/attachments" \
 
 `GET /api/admin/users`
 
-**의도된 접근 권한:** `ADMIN`.
+**접근 권한:** `ADMIN` 전용입니다. 인증된 `USER` 역할로 호출하면 `403 Forbidden`, 인증 정보가 없거나 유효하지 않으면 `401 Unauthorized`를 반환합니다.
 
 **성공 `200 OK`** — `AdminUserResponse[]` 배열입니다. 현재 구현은 페이지네이션 없이 전체 사용자 목록을 `createdAt DESC`로 반환합니다. `deletedAt`이 있는 탈퇴 계정도 목록에 포함될 수 있습니다.
 
@@ -657,7 +659,7 @@ curl -X POST "http://localhost:8080/api/posts/12/attachments" \
 }
 ```
 
-비밀번호 해시와 토큰 내부 값은 반환하지 않습니다. **현재 관리자 권한 검사의 HTTP 오류 응답은 14절을 참고하세요.**
+비밀번호 해시와 토큰 내부 값은 반환하지 않습니다.
 
 ---
 
@@ -677,17 +679,17 @@ curl -X POST "http://localhost:8080/api/posts/12/attachments" \
 | 400 | `VALIDATION_FAILED` | DTO 필드 검증 실패 |
 | 400 | `INVALID_REQUEST_BODY` | JSON 본문 파싱 실패 |
 | 400 | `INVALID_PARAMETER` | path/query 파라미터의 타입 변환 실패 또는 필수 파라미터 누락 |
-| 400 | `BAD_REQUEST` | 페이지 값 범위 등 `ResponseStatusException` 기반 잘못된 요청 |
+| 400 | `BAD_REQUEST` | 페이지 값 범위, 파일 유효성 또는 서비스 계층의 파일 크기 검증 등 잘못된 요청 |
 | 401 | `UNAUTHORIZED` | 보호 API 인증 누락 또는 유효하지 않은 인증 |
 | 401 | `INVALID_CREDENTIALS` | 로그인 정보 오류 또는 탈퇴 계정 로그인 |
-| 403 | `FORBIDDEN` | Spring Security 필터 체인에서 권한 거부 |
+| 403 | `FORBIDDEN` | 인증된 사용자의 역할 부족 또는 접근 거부 |
 | 404 | `RESOURCE_NOT_FOUND` | 대상 게시판·카테고리·게시글·댓글·첨부파일·사용자 없음 |
-| 409 | 비즈니스별 코드 | 중복 데이터, 게시글/댓글 권한 규칙 등 비즈니스 충돌 |
+| 409 | 비즈니스별 코드 | 중복 데이터, 게시글/댓글/첨부파일 권한 규칙 등 비즈니스 충돌 |
 | 409 | `DATA_INTEGRITY_VIOLATION` | DB 유일성/참조 제약 위반 |
-| 413 | `FILE_TOO_LARGE` | Multipart 업로드 최대 크기 초과 |
+| 413 | `FILE_TOO_LARGE` | multipart 설정의 업로드 최대 크기 초과 |
 | 500 | `INTERNAL_SERVER_ERROR` | 처리되지 않은 서버 오류 |
 
-`BusinessException`은 현재 `409 Conflict`로 매핑됩니다. 작성자 권한 위반도 이 예외를 사용하므로 게시글·댓글 등의 권한 오류가 403이 아니라 409로 반환됩니다. 보안 필터 체인에서 발생하는 인증/권한 오류와 서비스 예외는 처리 경로가 서로 다릅니다.
+`BusinessException`은 현재 `409 Conflict`로 매핑됩니다. 게시글·댓글·첨부파일의 서비스 수준 소유권 위반은 각각 비즈니스 예외 코드로 409를 반환합니다. 이 동작은 Spring Security에서 처리되는 401/403과 구분됩니다. 관리자 회원 API의 역할 거부는 `403 FORBIDDEN`을 반환합니다.
 
 주요 비즈니스 코드 예시:
 
@@ -703,6 +705,7 @@ curl -X POST "http://localhost:8080/api/posts/12/attachments" \
 | `INVALID_CATEGORY_BOARD` | 게시글과 카테고리의 게시판 불일치 |
 | `POST_ACCESS_DENIED` | 게시글 작성 권한 위반 |
 | `COMMENT_ACCESS_DENIED` | 댓글 작성 권한 위반 |
+| `ATTACHMENT_ACCESS_DENIED` | 첨부파일 업로드/삭제 권한 위반 |
 | `INVALID_PARENT_COMMENT` | 대댓글 부모가 다른 게시글에 속함 |
 | `POST_LIKE_ALREADY_EXISTS` | 중복 좋아요 |
 
@@ -728,12 +731,12 @@ curl -X POST "http://localhost:8080/api/posts/12/attachments" \
 
 ---
 
-## 14. 구현상 확인 사항
+## 14. 구현상 참고 사항
 
-1. **관리자 회원 API 권한 응답 확인 필요:** `SecurityConfig`에는 `/api/admin/**`에 대한 명시적 URL 권한 규칙이 없습니다. `AdminUserController`는 `@PreAuthorize("hasRole('ADMIN')")`와 메서드 안의 역할 검사를 함께 사용하지만, 현재 확인한 `SecurityConfig`에는 `@EnableMethodSecurity`가 없습니다. 내부 검사에서 `AccessDeniedException`이 발생할 경우 전역의 일반 `Exception` 핸들러가 이를 500으로 처리할 가능성이 있습니다. `/api/admin/**`에 URL 수준 `hasRole("ADMIN")`을 적용하고 일반 사용자 403 / 관리자 200 통합 테스트로 확인하는 것이 좋습니다.
-2. **서비스 권한 오류의 상태 코드:** 게시글·댓글·첨부파일 서비스의 작성자 검사에서 `BusinessException`을 쓰는 경우 409가 반환됩니다. API 클라이언트가 모든 권한 오류를 403으로 가정하지 않도록 주의해야 합니다.
-3. **첨부파일 다운로드 권한:** 다운로드는 인증 필요지만 파일 업로더 또는 게시글 작성자 여부를 별도 검사하지 않습니다. 제품 요구사항상 비공개 파일이어야 한다면 권한 정책을 재검토해야 합니다.
-4. **관리자 회원 목록 페이지네이션:** 현재 전체 목록을 한 번에 반환합니다. 회원 수가 커질 경우 서버 페이지네이션이 필요합니다.
+1. **관리자 회원 API 권한:** `GET /api/admin/users`는 `ADMIN` 전용입니다. `SecurityConfig`의 `/api/admin/**` URL 규칙과 메서드 보안을 통해 권한을 검사하며, `AccessDeniedException`은 `403 FORBIDDEN` JSON 응답으로 처리합니다. 인증되지 않았거나 유효한 인증 정보가 없는 경우 `401 UNAUTHORIZED`입니다.
+2. **서비스 권한 오류의 상태 코드:** 게시글·댓글·첨부파일 서비스의 작성자 검사에서 `BusinessException`을 사용하는 경우 409가 반환됩니다. 해당 서비스 오류 코드는 `POST_ACCESS_DENIED`, `COMMENT_ACCESS_DENIED`, `ATTACHMENT_ACCESS_DENIED`입니다.
+3. **첨부파일 다운로드 권한:** 다운로드는 인증이 필요하지만 파일 업로더 또는 게시글 작성자 여부를 별도로 검사하지 않습니다. 제품 요구사항상 비공개 파일이어야 한다면 권한 정책을 재검토해야 합니다.
+4. **관리자 회원 목록 페이지네이션:** 현재 전체 목록을 한 번에 반환합니다. 회원 수가 커질 경우 서버 페이지네이션을 고려할 수 있습니다.
 5. **Soft Delete 표현:** 게시글과 댓글의 실제 행은 유지됩니다. 댓글 목록은 삭제 댓글을 `deleted: true` 자리표시로 반환하지만 댓글 상세 API는 삭제된 댓글에 404를 반환합니다.
-6. **페이지 직렬화:** 게시글 목록 및 내 활동 API는 Spring Data `Page`를 직접 반환하므로 실제 프런트엔드가 사용하는 필드와 라이브 응답 구조가 일치하는지 회귀 확인하는 것이 좋습니다.
-7. **테스트 범위:** 이 문서는 `main`의 소스 코드를 기준으로 정리했습니다. 문서 작성 과정에서 외부 HTTP 호출이나 전체 자동화 테스트를 새로 실행한 것은 아닙니다.
+6. **페이지 직렬화:** 게시글 목록 및 내 활동 API는 Spring Data `Page`를 직접 반환하므로 응답에는 Spring Data 버전에 따라 `pageable`, `sort` 등 추가 메타데이터가 포함될 수 있습니다.
+7. **카테고리 삭제:** DB 외래 키 `fk_posts_category`의 `ON DELETE SET NULL` 설정에 따라 카테고리를 삭제해도 게시글은 유지되며 `category_id`만 `NULL`로 변경됩니다.

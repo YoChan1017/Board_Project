@@ -1,6 +1,6 @@
 # Board_Project API 요약 명세표
 
-> 회원가입·로그인을 제외한 API는 기본적으로 JWT 인증이 필요합니다. 권한 오류의 세부 사항 및 구현상 주의사항은 같은 폴더의 `BackEnd_API 명세서 정리.md`를 참고하세요.
+> 회원가입·로그인을 제외한 API는 기본적으로 JWT 인증이 필요합니다. 세부 동작과 응답 형식은 같은 폴더의 `BackEnd_API 명세서 정리.md`를 참고하세요.
 
 ## 1. 전체 API 목록
 
@@ -21,7 +21,7 @@
 | 카테고리 생성 | POST | `/api/boards/{boardId}/categories` | ADMIN | 201 | 카테고리 생성 |
 | 카테고리 상세 | GET | `/api/categories/{categoryId}` | 로그인 | 200 | 카테고리 1건 조회 |
 | 카테고리 수정 | PUT | `/api/categories/{categoryId}` | ADMIN | 200 | 카테고리 이름 수정 |
-| 카테고리 삭제 | DELETE | `/api/categories/{categoryId}` | ADMIN | 204 | 카테고리 삭제 |
+| 카테고리 삭제 | DELETE | `/api/categories/{categoryId}` | ADMIN | 204 | 카테고리 삭제, 기존 게시글의 카테고리 연결 해제 |
 | 게시글 목록/검색 | GET | `/api/boards/{boardId}/posts` | 로그인 | 200 | 페이지 조회, 제목·본문 검색 |
 | 게시글 생성 | POST | `/api/boards/{boardId}/posts` | 로그인 | 201 | 게시글 작성 |
 | 게시글 상세 | GET | `/api/posts/{postId}` | 로그인 | 200 | 상세 조회 성공 시 조회수 +1 |
@@ -36,14 +36,12 @@
 | 좋아요 등록 | POST | `/api/posts/{postId}/likes` | 로그인 | 201 | 이미 좋아요한 게시글이면 오류 |
 | 좋아요 취소 | DELETE | `/api/posts/{postId}/likes` | 로그인 | 200 | 기존 좋아요 제거 |
 | 첨부파일 목록 | GET | `/api/posts/{postId}/attachments` | 로그인 | 200 | 생성일 오름차순 목록 |
-| 첨부파일 업로드 | POST | `/api/posts/{postId}/attachments` | 작성자/ADMIN | 201 | multipart 필드 `file`, 최대 10 MiB |
+| 첨부파일 업로드 | POST | `/api/posts/{postId}/attachments` | 작성자/ADMIN | 201 | multipart 필드 `file`, 최대 파일 크기 10 MiB |
 | 첨부파일 다운로드 | GET | `/api/attachments/{attachmentId}/download` | 로그인 | 200 | 파일 바이너리 다운로드 |
 | 첨부파일 삭제 | DELETE | `/api/attachments/{attachmentId}` | 작성자/ADMIN | 204 | 파일 및 DB 메타데이터 삭제 |
 | 내 게시글 목록 | GET | `/api/me/posts` | 로그인 | 200 | 본인이 작성한 활성 게시글 페이지·검색 |
 | 내 댓글 목록 | GET | `/api/me/comments` | 로그인 | 200 | 본인이 작성한 활성 댓글 페이지·검색 |
-| 관리자 회원 목록 | GET | `/api/admin/users` | ADMIN 의도* | 200 | 사용자 메타데이터 목록, 탈퇴 계정 포함 가능 |
-
-\* `/api/admin/users`는 컨트롤러 내부 역할 검사를 사용합니다. 현재 `SecurityConfig`에 URL 수준 관리자 matcher가 없고 메서드 보안 활성화도 확인되지 않아, 일반 사용자의 실제 오류 상태 코드가 403인지 테스트로 확인하고 보완해야 합니다. 자세한 내용은 명세서 정리 문서 14절을 참고하세요.
+| 관리자 회원 목록 | GET | `/api/admin/users` | ADMIN | 200 | 사용자 메타데이터 목록, 탈퇴 계정 포함 가능 |
 
 ## 2. 주요 요청 필드
 
@@ -104,15 +102,15 @@
 
 | HTTP | 코드 예시 | 주요 조건 |
 |---:|---|---|
-| 400 | `VALIDATION_FAILED`, `INVALID_REQUEST_BODY`, `INVALID_PARAMETER`, `BAD_REQUEST` | 입력값·JSON·파라미터 형식 오류, 페이지 범위 위반 |
+| 400 | `VALIDATION_FAILED`, `INVALID_REQUEST_BODY`, `INVALID_PARAMETER`, `BAD_REQUEST` | 입력값·JSON·파라미터 형식 오류, 페이지 범위 위반; 서비스에 전달된 파일 크기 검증 오류도 `BAD_REQUEST`가 될 수 있음 |
 | 401 | `UNAUTHORIZED`, `INVALID_CREDENTIALS` | 인증 누락/실패, 로그인 정보 오류 |
-| 403 | `FORBIDDEN` | Spring Security 필터 체인에서 권한 거부 |
+| 403 | `FORBIDDEN` | 인증은 되었지만 필요한 역할이 없거나 접근이 거부됨 |
 | 404 | `RESOURCE_NOT_FOUND` | 대상 리소스가 없거나 Soft Delete되어 조회할 수 없음 |
-| 409 | 비즈니스 예외 코드, `DATA_INTEGRITY_VIOLATION` | 중복, 권한 규칙 위반, DB 제약 충돌 |
-| 413 | `FILE_TOO_LARGE` | multipart 업로드 제한 초과 |
+| 409 | 비즈니스 예외 코드, `DATA_INTEGRITY_VIOLATION` | 중복, 비즈니스 권한 규칙 위반, DB 제약 충돌 |
+| 413 | `FILE_TOO_LARGE` | multipart 설정의 업로드 크기 제한 초과 |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 서버 내부 오류 |
 
-주요 비즈니스 코드: `USERNAME_ALREADY_EXISTS`, `NICKNAME_ALREADY_EXISTS`, `EMAIL_ALREADY_EXISTS`, `BOARD_NAME_ALREADY_EXISTS`, `BOARD_HAS_CATEGORIES`, `BOARD_HAS_POSTS`, `CATEGORY_NAME_ALREADY_EXISTS`, `INVALID_CATEGORY_BOARD`, `POST_ACCESS_DENIED`, `COMMENT_ACCESS_DENIED`, `INVALID_PARENT_COMMENT`, `POST_LIKE_ALREADY_EXISTS`.
+주요 비즈니스 코드: `USERNAME_ALREADY_EXISTS`, `NICKNAME_ALREADY_EXISTS`, `EMAIL_ALREADY_EXISTS`, `BOARD_NAME_ALREADY_EXISTS`, `BOARD_HAS_CATEGORIES`, `BOARD_HAS_POSTS`, `CATEGORY_NAME_ALREADY_EXISTS`, `INVALID_CATEGORY_BOARD`, `POST_ACCESS_DENIED`, `COMMENT_ACCESS_DENIED`, `ATTACHMENT_ACCESS_DENIED`, `INVALID_PARENT_COMMENT`, `POST_LIKE_ALREADY_EXISTS`.
 
 ## 5. 공통 동작 및 메모
 
@@ -124,6 +122,7 @@
 | 삭제 댓글 목록 | 댓글 목록에서 `deleted: true`, `authorId: null`, 삭제 안내 문자열로 표시하고 대댓글 연결을 유지 |
 | 게시글 조회수 | 상세 조회 성공 시 DB 업데이트로 조회수 1 증가 |
 | 첨부파일 접근 | 목록/다운로드는 로그인 사용자, 업로드/삭제는 게시글 작성자 또는 ADMIN |
+| 카테고리 삭제 | DB 외래 키가 `ON DELETE SET NULL`이므로 해당 카테고리를 참조하던 게시글은 유지되고 `category_id`가 `NULL`로 변경됨 |
 | 업로드 위치 | `app.upload.dir`, 기본값 `${user.home}/board-project-uploads` |
-| 관리자 회원 목록 | 현재 전체 사용자 목록 반환, 페이지네이션 없음; 접근 제어 응답 확인 필요 |
-| 문서 범위 | 소스 코드 대조 기준이며 모든 엔드포인트를 이번 문서 작업에서 실제 HTTP 재시험한 것은 아님 |
+| 관리자 회원 목록 | ADMIN 전용; 전체 사용자 목록을 반환하며 페이지네이션은 없음 |
+| 문서 범위 | 백엔드 구현과 DB migration을 기준으로 작성했으며, 실제 응답은 구성된 실행 환경에 따라 달라질 수 있음 |
