@@ -16,7 +16,8 @@ public class CommentUpdateRequest {
         return content;
     }
 
+    // Normalize leading/trailing whitespace, then validate; spaces inside a comment remain valid.
     public void setContent(String content) {
-        this.content = content;
+        this.content = content == null ? null : content.trim();
     }
 }

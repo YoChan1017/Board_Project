@@ -19,8 +19,9 @@ public class BoardUpdateRequest {
         return name;
     }
 
+    // Trim outer whitespace; internal spaces remain valid.
     public void setName(String name) {
-        this.name = name;
+        this.name = name == null ? null : name.trim();
     }
 
     public String getDescription() {

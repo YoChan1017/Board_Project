@@ -2,11 +2,13 @@ package com.example.board.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class SignupRequest {
 
     @NotBlank(message = "username은 필수입니다.")
+    @Pattern(regexp = "^\\S+$", message = "username에는 공백 문자를 포함할 수 없습니다.")
     @Size(min = 4, max = 50, message = "username은 4자 이상 50자 이하여야 합니다.")
     private String username;
 
@@ -45,8 +47,9 @@ public class SignupRequest {
         return nickname;
     }
 
+    // Normalize the edges before Bean Validation and duplicate-name checks.
     public void setNickname(String nickname) {
-        this.nickname = nickname;
+        this.nickname = nickname == null ? null : nickname.trim();
     }
 
     public String getEmail() {
@@ -54,6 +57,6 @@ public class SignupRequest {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email == null ? null : email.trim();
     }
 }

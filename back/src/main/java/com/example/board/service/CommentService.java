@@ -37,17 +37,10 @@ public class CommentService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * 특정 게시글의 댓글 목록 조회
-     */
+    /** Lists comments only while their parent post is active. */
     public List<CommentListResponse> findByPostId(Long postId) {
 
-        // 삭제되지 않은 게시글인지 확인
-        if (!postRepository.findByIdAndDeletedAtIsNull(postId).isPresent()) {
-            throw new ResourceNotFoundException(
-                    "게시글을 찾을 수 없습니다."
-            );
-        }
+        findActivePost(postId);
 
         return commentRepository
                 .findByPostIdOrderByCreatedAtAscIdAsc(postId)
@@ -56,39 +49,24 @@ public class CommentService {
                 .toList();
     }
 
-    /**
-     * 댓글 상세 조회
-     */
+    /** Finds an active comment only if its parent post is also active. */
     public CommentResponse findById(Long commentId) {
 
-        Comment comment = commentRepository
-                .findByIdAndDeletedAtIsNull(commentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "댓글을 찾을 수 없습니다."
-                        ));
+        Comment comment = findActiveComment(commentId);
+        ensureParentPostIsActive(comment);
 
         return CommentResponse.from(comment);
     }
 
-    /**
-     * 댓글 / 대댓글 작성
-     */
+    /** Creates a comment on an active post. */
     @Transactional
     public CommentResponse create(
             Long postId,
             CommentCreateRequest request,
             String username) {
 
-        // 게시글 확인
-        Post post = postRepository
-                .findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "게시글을 찾을 수 없습니다."
-                        ));
+        Post post = findActivePost(postId);
 
-        // 사용자 확인
         User user = userRepository
                 .findByUsername(username)
                 .orElseThrow(() ->
@@ -96,7 +74,6 @@ public class CommentService {
                                 "사용자를 찾을 수 없습니다."
                         ));
 
-        // 부모 댓글 확인
         Comment parent = findParentComment(
                 postId,
                 request.getParentId()
@@ -114,11 +91,7 @@ public class CommentService {
         return CommentResponse.from(savedComment);
     }
 
-    /**
-     * 댓글 수정
-     *
-     * 작성자 본인 또는 ADMIN만 수정 가능
-     */
+    /** Updates an active comment only while its parent post remains active. */
     @Transactional
     public CommentResponse update(
             Long commentId,
@@ -126,59 +99,52 @@ public class CommentService {
             String username,
             boolean admin) {
 
-        Comment comment = commentRepository
-                .findByIdAndDeletedAtIsNull(commentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "댓글을 찾을 수 없습니다."
-                        ));
-
-        checkAuthorOrAdmin(
-                comment,
-                username,
-                admin
-        );
+        Comment comment = findActiveComment(commentId);
+        ensureParentPostIsActive(comment);
+        checkAuthorOrAdmin(comment, username, admin);
 
         comment.setContent(request.getContent());
 
         return CommentResponse.from(comment);
     }
 
-    /**
-     * 댓글 삭제
-     *
-     * 실제 DELETE가 아니라 deletedAt을 기록한다.
-     */
+    /** Soft-deletes an active comment only while its parent post remains active. */
     @Transactional
     public void delete(
             Long commentId,
             String username,
             boolean admin) {
 
-        Comment comment = commentRepository
-                .findByIdAndDeletedAtIsNull(commentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "댓글을 찾을 수 없습니다."
-                        ));
-
-        checkAuthorOrAdmin(
-                comment,
-                username,
-                admin
-        );
+        Comment comment = findActiveComment(commentId);
+        ensureParentPostIsActive(comment);
+        checkAuthorOrAdmin(comment, username, admin);
 
         comment.setDeletedAt(LocalDateTime.now());
     }
 
-    /**
-     * 부모 댓글 조회 및 현재 게시글 소속 여부 검증
-     */
+    private Post findActivePost(Long postId) {
+        return postRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "게시글을 찾을 수 없습니다."));
+    }
+
+    private Comment findActiveComment(Long commentId) {
+        return commentRepository.findByIdAndDeletedAtIsNull(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "댓글을 찾을 수 없습니다."));
+    }
+
+    /** Prevent access to a comment whose parent post has been soft-deleted. */
+    private void ensureParentPostIsActive(Comment comment) {
+        Long postId = comment.getPost().getId();
+        findActivePost(postId);
+    }
+
+    /** Validates that a selected parent comment belongs to the active target post. */
     private Comment findParentComment(
             Long postId,
             Long parentId) {
 
-        // 일반 댓글
         if (parentId == null) {
             return null;
         }
@@ -190,7 +156,6 @@ public class CommentService {
                                 "부모 댓글을 찾을 수 없습니다."
                         ));
 
-        // 부모 댓글이 현재 게시글의 댓글인지 확인
         if (!parent.getPost().getId().equals(postId)) {
             throw new BusinessException(
                     "INVALID_PARENT_COMMENT",
@@ -198,12 +163,11 @@ public class CommentService {
             );
         }
 
+        // postId was already resolved to an active post in create().
         return parent;
     }
 
-    /**
-     * 작성자 본인 또는 ADMIN 여부 확인
-     */
+    /** Checks author ownership unless the caller is an administrator. */
     private void checkAuthorOrAdmin(
             Comment comment,
             String username,

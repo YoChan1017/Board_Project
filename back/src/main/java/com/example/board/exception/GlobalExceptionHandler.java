@@ -211,6 +211,7 @@ public class GlobalExceptionHandler {
             case NOT_FOUND -> "RESOURCE_NOT_FOUND";
             case CONFLICT -> "CONFLICT";
             case PAYLOAD_TOO_LARGE -> "FILE_TOO_LARGE";
+            case INTERNAL_SERVER_ERROR -> "INTERNAL_SERVER_ERROR";
             default -> "REQUEST_FAILED";
         };
     }
