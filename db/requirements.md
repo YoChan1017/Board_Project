@@ -13,6 +13,7 @@
 - 회원 정보 수정
 - `USER` / `ADMIN` 권한 구분
 - Soft Delete
+- `token_version`으로 비밀번호 변경·계정 탈퇴 이후 기존 JWT 무효화 지원
 
 ### 게시판
 - 게시판 생성/조회/수정/삭제
@@ -80,3 +81,5 @@ created_at ASC
 - 필수 컬럼은 `NOT NULL`로 정의한다.
 - 중복되면 안 되는 값은 `UNIQUE`를 사용한다.
 - 좋아요는 `(post_id, user_id)`를 UNIQUE로 설정한다.
+- `users.token_version`은 `NOT NULL DEFAULT 0`으로 정의한다.
+- 이미 배포된 DB 스키마 변경은 Flyway 새 버전 마이그레이션으로 관리한다.

@@ -1,6 +1,7 @@
 -- Board Project - Draft MariaDB Schema
 -- 설계 검증용 초안이다.
 -- 운영 배포용 Migration은 Spring Boot + Flyway로 별도 관리한다.
+-- 이 초안은 V1~V8이 모두 적용된 뒤의 최종 스키마 모양을 표현한다.
 
 CREATE DATABASE IF NOT EXISTS board_db
     CHARACTER SET utf8mb4
@@ -18,6 +19,7 @@ CREATE TABLE users (
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     deleted_at DATETIME(6) NULL,
+    token_version INT NOT NULL DEFAULT 0,
     CONSTRAINT pk_users PRIMARY KEY (id),
     CONSTRAINT uq_users_username UNIQUE (username),
     CONSTRAINT uq_users_nickname UNIQUE (nickname),
@@ -142,3 +144,4 @@ CREATE INDEX idx_attachments_post ON attachments (post_id);
 -- SHOW TABLES;
 -- DESCRIBE users;
 -- DESCRIBE posts;
+-- SHOW COLUMNS FROM users LIKE 'token_version';

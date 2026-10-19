@@ -1,5 +1,6 @@
 -- Board Project - Local Test Seed
 -- 개발/설계 검증용이다. 운영 DB에서 실행하지 않는다.
+-- token_version은 V8에서 DEFAULT 0으로 추가되므로 INSERT에서 생략한다.
 
 USE board_db;
 
