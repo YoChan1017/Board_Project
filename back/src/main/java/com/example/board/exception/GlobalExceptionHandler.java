@@ -1,4 +1,3 @@
-
 package com.example.board.exception;
 
 import java.util.stream.Collectors;
@@ -9,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -47,6 +47,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED,
                 "INVALID_CREDENTIALS",
                 e.getMessage()
+        );
+    }
+
+    // Authenticated requests that do not have the required role.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException e) {
+
+        return buildResponse(
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                "접근 권한이 없습니다."
         );
     }
 
@@ -202,7 +214,7 @@ public class GlobalExceptionHandler {
             default -> "REQUEST_FAILED";
         };
     }
-    
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingParameter(
             MissingServletRequestParameterException e) {
@@ -212,7 +224,7 @@ public class GlobalExceptionHandler {
                 "필수 요청 파라미터가 없습니다."
         );
     }
-    
+
     @ExceptionHandler(MissingServletRequestPartException.class)
     public ResponseEntity<ErrorResponse> handleMissingRequestPart(
             MissingServletRequestPartException e) {

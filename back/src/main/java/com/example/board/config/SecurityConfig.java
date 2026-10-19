@@ -1,4 +1,3 @@
-
 package com.example.board.config;
 
 import java.io.IOException;
@@ -10,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -54,6 +55,9 @@ public class SecurityConfig {
                     "/api/auth/login",
                     "/error"
                 ).permitAll()
+
+                // All admin endpoints require the ADMIN role.
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 .requestMatchers(
                     HttpMethod.POST,
