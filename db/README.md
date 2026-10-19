@@ -34,6 +34,6 @@ Board Project의 MariaDB 데이터 설계와 SQL 참고 자료를 보관합니�
 
 DB 기본 이름은 `board_db`입니다. MariaDB에 데이터베이스를 준비하고 백엔드의 `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` 설정을 맞춰주세요.
 
-개발 PC에서 MariaDB, STS(Spring Boot 백엔드), VS Code(React 프론트엔드)를 실행하는 순서와 환경변수 설정은 [로컬 개발환경 실행 가이드](../document/LOCAL_DEVELOPMENT_SETUP.md)를 참고하세요.
+개발 PC에서 MariaDB, STS(Spring Boot 백엔드), VS Code(React 프론트엔드)를 실행하는 순서와 환경변수 설정은 [로컬 개발환경 실행 가이드](../document/로컬 개발환경 실행 순서 및 환경변수.md)를 참고하세요.
 
 > `sql/draft_schema.sql`과 `seed/test_data.sql`은 참고 자료입니다. Flyway로 관리되는 환경에서 초안 스키마를 다시 실행하지 마세요. `draft_schema.sql`은 신규 설계 시점의 최종 스키마 모양을 보여주기 때문에 `token_version`을 포함하지만, 실제 마이그레이션에서는 V8에서 이 컬럼을 추가합니다. `seed/test_data.sql`은 개발·테스트용이며 운영 DB에서 실행하지 않습니다.
