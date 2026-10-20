@@ -17,7 +17,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // Check whether a post exists in a board
     boolean existsByBoardId(Long boardId);
 
-    // Find active posts with pagination
+    // Find active posts with pagination, fetching associations used by the list DTO
+    @EntityGraph(attributePaths = {"user", "category"})
     Page<Post> findByBoardIdAndDeletedAtIsNull(
             Long boardId,
             Pageable pageable
@@ -34,6 +35,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                   OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
               )
             """)
+    @EntityGraph(attributePaths = {"user", "category"})
     Page<Post> searchActivePostsByBoardIdAndKeyword(
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,

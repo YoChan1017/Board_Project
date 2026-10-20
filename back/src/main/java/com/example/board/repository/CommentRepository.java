@@ -15,6 +15,8 @@ import com.example.board.entity.Comment;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     // Include soft-deleted comments so replies can retain their parent thread.
+    // Fetch the author because CommentListResponse reads the author's id and nickname.
+    @EntityGraph(attributePaths = {"user"})
     List<Comment> findByPostIdOrderByCreatedAtAscIdAsc(Long postId);
 
     // 삭제되지 않은 댓글 상세 조회
